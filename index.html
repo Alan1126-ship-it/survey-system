@@ -25,7 +25,7 @@
 </head>
 <body class="bg-slate-100 text-slate-900 min-h-screen flex flex-col antialiased">
 
-  <!-- 頂部導航列 (乾淨純繁中高對比) -->
+  <!-- 頂部導航列 (純繁中大氣排版) -->
   <header class="bg-slate-900 text-white sticky top-0 z-40 shadow-md">
     <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
       <div class="flex items-center space-x-3">
@@ -72,9 +72,7 @@
   <!-- 主內容區 -->
   <main class="max-w-6xl mx-auto px-4 py-6 flex-1 w-full space-y-6">
 
-    <!-- ========================================== -->
-    <!-- VIEW 1: 學生端 - 乾淨純中文借用籃 -->
-    <!-- ========================================== -->
+    <!-- VIEW 1: 學生端 -->
     <div id="view-student" class="space-y-6">
 
       <!-- 步驟 1: 組別資訊 -->
@@ -138,18 +136,18 @@
           </div>
         </div>
 
-        <!-- 連續相機視窗 -->
+        <!-- 相機視窗 -->
         <div id="camera-box" class="hidden bg-slate-900 rounded-2xl p-3 space-y-2 border-2 border-indigo-500">
           <div class="flex justify-between items-center text-white">
             <span class="text-xs font-bold text-amber-300 animate-pulse flex items-center">
-              <i class="fa-solid fa-circle-dot mr-1.5 text-[8px]"></i>連續掃瞄中：對準標籤 (嗶一聲自動加入)
+              <i class="fa-solid fa-circle-dot mr-1.5 text-[8px]"></i>連續掃瞄中：對準標籤 (自動加入)
             </span>
             <button onclick="stopContinuousScan()" class="text-xs bg-slate-800 text-slate-200 px-3 py-1 rounded-lg border border-slate-700">關閉鏡頭</button>
           </div>
           <div id="qr-camera-stream" class="w-full max-w-xs mx-auto overflow-hidden rounded-xl border border-slate-700"></div>
         </div>
 
-        <!-- 已掃入的清單籃 -->
+        <!-- 借用清單籃 -->
         <div>
           <div class="flex justify-between items-center mb-3">
             <h4 class="text-xs font-bold text-slate-700 flex items-center space-x-2">
@@ -179,9 +177,7 @@
       </div>
     </div>
 
-    <!-- ========================================== -->
-    <!-- VIEW 2: 老師/助教端 - 即時問題通報看板 -->
-    <!-- ========================================== -->
+    <!-- VIEW 2: 問題通報看板 -->
     <div id="view-issues" class="space-y-6 hidden">
       <div class="bg-white border-2 border-slate-300 rounded-3xl p-5 shadow-sm space-y-4">
         <div class="flex justify-between items-center border-b border-slate-200 pb-3">
@@ -201,9 +197,7 @@
       </div>
     </div>
 
-    <!-- ========================================== -->
-    <!-- VIEW 3: 老師端 - 資產庫總表與管理後台 -->
-    <!-- ========================================== -->
+    <!-- VIEW 3: 管理後台 -->
     <div id="view-admin" class="space-y-6 hidden">
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <div class="bg-white border-2 border-slate-300 p-4 rounded-2xl">
@@ -246,7 +240,7 @@
               <tr>
                 <th class="p-3">Asset ID (QR編號)</th>
                 <th class="p-3">設備名稱 / 類別</th>
-                <th class="p-3">掛載子配件 (電池/螺旋槳/腳架)</th>
+                <th class="p-3">掛載子配件</th>
                 <th class="p-3">目前狀態</th>
                 <th class="p-3">借用組別</th>
                 <th class="p-3 text-right">管理操作</th>
@@ -260,9 +254,7 @@
 
   </main>
 
-  <!-- ========================================== -->
-  <!-- MODAL 1: 儀器身分證、說明、檢查與問題回報 -->
-  <!-- ========================================== -->
+  <!-- MODAL 1: 檢查與問題回報 -->
   <div id="modal-item-inspect" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto custom-scroll text-xs border-2 border-slate-300">
       <div class="flex justify-between items-start border-b border-slate-200 pb-2">
@@ -274,7 +266,6 @@
         <button onclick="closeModal('modal-item-inspect')" class="text-slate-400 hover:text-slate-800 text-2xl">&times;</button>
       </div>
 
-      <!-- 功能說明 -->
       <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-1">
         <p class="font-bold text-slate-700 flex items-center">
           <i class="fa-solid fa-circle-info text-indigo-600 mr-1.5"></i>功能規格指引：
@@ -282,7 +273,6 @@
         <p id="inspect-desc" class="text-slate-600 leading-relaxed font-medium">說明載入中...</p>
       </div>
 
-      <!-- 歷史紀錄 -->
       <div class="border-t border-slate-200 pt-2.5 space-y-1.5">
         <p class="font-bold text-slate-700 flex items-center">
           <i class="fa-solid fa-clock-rotate-left text-amber-600 mr-1.5"></i>歷史保養校正與舊況紀錄：
@@ -290,13 +280,11 @@
         <div id="inspect-history-list" class="space-y-1 max-h-32 overflow-y-auto custom-scroll pr-1"></div>
       </div>
 
-      <!-- 專屬檢查項目 -->
       <div class="border-t border-slate-200 pt-2.5 space-y-2">
         <p class="font-bold text-slate-800">開箱狀態核對勾選：</p>
         <div id="inspect-category-checks" class="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-indigo-50/50 p-3 rounded-2xl border border-indigo-100 font-medium text-slate-700"></div>
       </div>
 
-      <!-- 文字描述新發現之問題 (免拍照) -->
       <div class="border-t border-slate-200 pt-2.5 space-y-2">
         <p class="font-bold text-rose-700 flex items-center">
           <i class="fa-solid fa-pen-to-square mr-1.5"></i>若發現新問題，請在此文字描述 (免拍照，清楚寫出問題現象)：
@@ -311,9 +299,7 @@
     </div>
   </div>
 
-  <!-- ========================================== -->
-  <!-- MODAL 2: 專屬 QR Code 貼紙預覽與列印視窗 -->
-  <!-- ========================================== -->
+  <!-- MODAL 2: 標籤列印 -->
   <div id="modal-qr-print" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-center text-xs border-2 border-slate-300">
       <div class="flex justify-between items-center border-b border-slate-200 pb-2">
@@ -321,7 +307,6 @@
         <button onclick="closeModal('modal-qr-print')" class="text-slate-400 hover:text-slate-800 text-lg">&times;</button>
       </div>
       
-      <!-- 標籤視覺呈現 -->
       <div id="qr-sticker-card" class="p-4 bg-white border-2 border-slate-900 rounded-2xl space-y-1.5 inline-block shadow-md">
         <p class="font-bold text-slate-900 text-xs tracking-wider">建國科大 土木工程系</p>
         <div id="qr-code-graphic" class="flex justify-center p-2 bg-white rounded-lg"></div>
@@ -341,9 +326,7 @@
     </div>
   </div>
 
-  <!-- ========================================== -->
-  <!-- MODAL 3: 權限密碼登入切換 -->
-  <!-- ========================================== -->
+  <!-- MODAL 3: 權限密碼 -->
   <div id="modal-role-auth" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-xs border-2 border-slate-300">
       <div class="flex justify-between items-center border-b border-slate-200 pb-2">
@@ -381,9 +364,7 @@
     </div>
   </div>
 
-  <!-- ========================================== -->
-  <!-- MODAL 4: 新增儀器 / 子配件視窗 -->
-  <!-- ========================================== -->
+  <!-- MODAL 4: 新增設備 -->
   <div id="modal-create-asset" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-3 text-xs border-2 border-slate-300 max-h-[90vh] overflow-y-auto custom-scroll">
       <div class="flex justify-between items-center border-b border-slate-200 pb-2">
@@ -444,9 +425,7 @@
     </div>
   </div>
 
-  <!-- ========================================== -->
-  <!-- MODAL 5: Google Sheets Webhook 設定 -->
-  <!-- ========================================== -->
+  <!-- MODAL 5: Webhook 設定 -->
   <div id="modal-webhook-config" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-3 text-xs border-2 border-slate-300">
       <div class="flex justify-between items-center border-b border-slate-200 pb-2">
@@ -469,9 +448,7 @@
     </div>
   </div>
 
-  <!-- ========================================== -->
-  <!-- MODAL 6: 手動快選視窗 -->
-  <!-- ========================================== -->
+  <!-- MODAL 6: 手動快選 -->
   <div id="modal-quick-pick" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-md w-full p-5 shadow-2xl space-y-3 text-xs border-2 border-slate-300">
       <div class="flex justify-between items-center border-b border-slate-200 pb-2">
@@ -483,9 +460,8 @@
     </div>
   </div>
 
-  <!-- 系統核心邏輯與資料庫 -->
+  <!-- 系統核心邏輯 -->
   <script>
-    // 預設資料庫：母機 (Assets) 與 子配件 (Components)
     const initialAssetDatabase = [
       {
         code: "TS-01",
@@ -540,7 +516,6 @@
           { date: "2026-02-20", note: "韌體更新完成，IMU與指南針校驗正常。" }
         ]
       },
-      // 子配件
       {
         code: "BAT-TS01-A",
         name: "Topcon BT-52QA 電池",
@@ -629,6 +604,15 @@
     let studentCart = [];
     let html5QrScanner = null;
     let inspectingCode = null;
+
+    function getGasUrl() {
+      return localStorage.getItem('survey_prod_gas_url_v8') || localStorage.getItem('survey_prod_gas_url_v7') || '';
+    }
+
+    function setGasUrl(url) {
+      localStorage.setItem('survey_prod_gas_url_v8', url);
+      localStorage.setItem('survey_prod_gas_url_v7', url);
+    }
 
     function getAssets() {
       try {
@@ -776,17 +760,17 @@
           : '';
 
         container.innerHTML += `
-          <div class="bg-white p-3.5 rounded-2xl border-2 ` + (item.issueText ? 'border-rose-400' : (item.inspected ? 'border-emerald-400' : 'border-slate-300')) + ` shadow-sm flex justify-between items-center space-x-2">
-            <div onclick="openItemInspectModal('` + item.code + `')" class="flex-1 cursor-pointer">
+          <div class="bg-white p-3.5 rounded-2xl border-2 ${item.issueText ? 'border-rose-400' : (item.inspected ? 'border-emerald-400' : 'border-slate-300')} shadow-sm flex justify-between items-center space-x-2">
+            <div onclick="openItemInspectModal('${item.code}')" class="flex-1 cursor-pointer">
               <div class="flex items-center space-x-2">
-                <span class="font-black text-slate-900 text-sm font-mono notranslate" translate="no">` + item.code + `</span>
-                <span class="text-xs text-slate-800 font-bold">` + item.name + `</span>
+                <span class="font-black text-slate-900 text-sm font-mono notranslate" translate="no">${item.code}</span>
+                <span class="text-xs text-slate-800 font-bold">${item.name}</span>
               </div>
-              <div class="mt-1">` + inspectBadge + `</div>
-              ` + childrenTag + `
-              ` + issueTag + `
+              <div class="mt-1">${inspectBadge}</div>
+              ${childrenTag}
+              ${issueTag}
             </div>
-            <button onclick="removeFromStudentCart(` + idx + `)" class="text-slate-400 hover:text-rose-600 p-2 text-sm" title="移出清單">
+            <button onclick="removeFromStudentCart(${idx})" class="text-slate-400 hover:text-rose-600 p-2 text-sm" title="移出清單">
               <i class="fa-solid fa-trash-can"></i>
             </button>
           </div>
@@ -818,7 +802,7 @@
         item.history.slice().reverse().forEach(h => {
           hl.innerHTML += `
             <div class="bg-slate-100 p-1.5 rounded-lg text-[11px] text-slate-700">
-              <span class="text-amber-700 font-bold mr-1">` + h.date + `:</span>` + h.note + `
+              <span class="text-amber-700 font-bold mr-1">${h.date}:</span>${h.note}
             </div>
           `;
         });
@@ -943,33 +927,33 @@
           <div class="bg-slate-50 p-4 rounded-2xl border-2 border-slate-300 space-y-3">
             <div class="flex justify-between items-start">
               <div class="flex items-center space-x-2">
-                <span class="font-black text-slate-900 font-mono text-sm notranslate" translate="no">` + issue.deviceCode + `</span>
-                <span class="text-xs text-slate-600 font-semibold">通報來源：` + issue.reporter + `</span>
-                <span class="text-[10px] text-slate-400 font-medium">` + issue.date + `</span>
+                <span class="font-black text-slate-900 font-mono text-sm notranslate" translate="no">${issue.deviceCode}</span>
+                <span class="text-xs text-slate-600 font-semibold">通報來源：${issue.reporter}</span>
+                <span class="text-[10px] text-slate-400 font-medium">${issue.date}</span>
               </div>
-              ` + badge + `
+              ${badge}
             </div>
 
             <div class="bg-white p-3 rounded-xl border border-slate-200 text-xs">
               <p class="font-bold text-rose-700 mb-1"><i class="fa-solid fa-quote-left mr-1"></i>學生文字通報之問題：</p>
-              <p class="text-slate-800 leading-relaxed font-medium">` + issue.description + `</p>
+              <p class="text-slate-800 leading-relaxed font-medium">${issue.description}</p>
             </div>
 
-            ` + (issue.resolutionNote ? '<p class="text-[11px] text-emerald-700 bg-emerald-50 p-2 rounded-lg border border-emerald-200 font-semibold"><strong>處置紀錄：</strong> ' + issue.resolutionNote + '</p>' : '') + `
+            ${issue.resolutionNote ? `<p class="text-[11px] text-emerald-700 bg-emerald-50 p-2 rounded-lg border border-emerald-200 font-semibold"><strong>處置紀錄：</strong> ${issue.resolutionNote}</p>` : ''}
 
-            ` + (issue.status === 'PENDING' ? `
+            ${issue.status === 'PENDING' ? `
               <div class="flex flex-wrap gap-2 pt-1 border-t border-slate-200">
-                <button onclick="handleIssueAction('` + issue.id + `', 'SWAPPED')" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow">
+                <button onclick="handleIssueAction('${issue.id}', 'SWAPPED')" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow">
                   <i class="fa-solid fa-arrows-rotate mr-1"></i>現場換一台/換電
                 </button>
-                <button onclick="handleIssueAction('` + issue.id + `', 'TO_REPAIR')" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow">
+                <button onclick="handleIssueAction('${issue.id}', 'TO_REPAIR')" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow">
                   <i class="fa-solid fa-wrench mr-1"></i>安排廠商送修
                 </button>
-                <button onclick="handleIssueAction('` + issue.id + `', 'RESOLVED')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow">
+                <button onclick="handleIssueAction('${issue.id}', 'RESOLVED')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow">
                   <i class="fa-solid fa-check mr-1"></i>現場調校正常結案
                 </button>
               </div>
-            ` : '') + `
+            ` : ''}
           </div>
         `;
       });
@@ -1045,17 +1029,17 @@
 
         tbody.innerHTML += `
           <tr class="hover:bg-slate-50">
-            <td class="p-3 font-black text-slate-900 font-mono notranslate" translate="no">` + a.code + `</td>
+            <td class="p-3 font-black text-slate-900 font-mono notranslate" translate="no">${a.code}</td>
             <td class="p-3">
-              <div class="font-bold text-slate-900">` + a.name + `</div>
-              <span class="text-[10px] text-indigo-700 font-semibold">` + a.category + `</span>
+              <div class="font-bold text-slate-900">${a.name}</div>
+              <span class="text-[10px] text-indigo-700 font-semibold">${a.category}</span>
             </td>
-            <td class="p-3 max-w-xs">` + childrenTags + `</td>
-            <td class="p-3">` + badge + `</td>
-            <td class="p-3">` + borrowerText + `</td>
+            <td class="p-3 max-w-xs">${childrenTags}</td>
+            <td class="p-3">${badge}</td>
+            <td class="p-3">${borrowerText}</td>
             <td class="p-3 text-right space-x-1">
-              ` + (a.status === 'BORROWED' ? '<button onclick="adminReturnItem('' + a.code + '')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold">驗收歸位</button>' : '') + `
-              <button onclick="openQrPrintModal('` + a.code + `')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold" title="列印 QR 標籤">
+              ${a.status === 'BORROWED' ? `<button onclick="adminReturnItem('${a.code}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold">驗收歸位</button>` : ''}
+              <button onclick="openQrPrintModal('${a.code}')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold" title="列印 QR 標籤">
                 <i class="fa-solid fa-qrcode mr-1"></i>QR貼紙
               </button>
             </td>
@@ -1107,7 +1091,7 @@
       select.innerHTML = '<option value="庫存備用 (無固定主機)">庫存備用 (無固定主機)</option>';
       const assets = getAssets();
       assets.filter(a => a.isParent !== false).forEach(p => {
-        select.innerHTML += `<option value="` + p.code + `">` + p.code + ` (` + p.name + `)</option>`;
+        select.innerHTML += `<option value="${p.code}">${p.code} (${p.name})</option>`;
       });
 
       toggleParentBindingField();
@@ -1182,14 +1166,14 @@
         container.innerHTML += `
           <div class="flex justify-between items-center p-2.5 bg-slate-50 rounded-xl border border-slate-200">
             <div>
-              <span class="font-black text-slate-900 font-mono notranslate" translate="no">` + a.code + `</span>
-              <span class="text-xs text-slate-800 font-bold ml-1">` + a.name + `</span>
-              <span class="text-[10px] text-indigo-700 block">` + a.category + `</span>
+              <span class="font-black text-slate-900 font-mono notranslate" translate="no">${a.code}</span>
+              <span class="text-xs text-slate-800 font-bold ml-1">${a.name}</span>
+              <span class="text-[10px] text-indigo-700 block">${a.category}</span>
             </div>
-            ` + (a.status === 'AVAILABLE' 
-              ? `<button onclick="handleIncomingAssetCode('` + a.code + `'); closeModal('modal-quick-pick')" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold">+ 加入</button>`
-              : `<span class="text-[10px] text-slate-400 font-bold">` + (a.status === 'BORROWED' ? '借出中' : '待修') + `</span>`
-            ) + `
+            ${a.status === 'AVAILABLE' 
+              ? `<button onclick="handleIncomingAssetCode('${a.code}'); closeModal('modal-quick-pick')" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold">+ 加入</button>`
+              : `<span class="text-[10px] text-slate-400 font-bold">${a.status === 'BORROWED' ? '借出中' : '待修'}</span>`
+            }
           </div>
         `;
       });
@@ -1265,21 +1249,20 @@
     }
 
     function openWebhookConfigModal() {
-      const url = localStorage.getItem('survey_prod_gas_url_v8') || '';
-      document.getElementById('cfg-gas-url').value = url;
+      document.getElementById('cfg-gas-url').value = getGasUrl();
       document.getElementById('modal-webhook-config').classList.remove('hidden');
     }
 
     function saveWebhookConfig() {
       const url = document.getElementById('cfg-gas-url').value.trim();
-      localStorage.setItem('survey_prod_gas_url_v8', url);
+      setGasUrl(url);
       closeModal('modal-webhook-config');
       checkSyncStatus();
       alert("Webhook API 設定已儲存！");
     }
 
     function checkSyncStatus() {
-      const url = localStorage.getItem('survey_prod_gas_url_v8');
+      const url = getGasUrl();
       const dot = document.getElementById('sync-dot');
       const txt = document.getElementById('sync-text');
       if (url) {
@@ -1292,7 +1275,7 @@
     }
 
     function dispatchToGoogleSheets(actionType, dataPayload) {
-      const url = localStorage.getItem('survey_prod_gas_url_v8');
+      const url = getGasUrl();
       if (!url) return;
 
       fetch(url, {
@@ -1316,7 +1299,6 @@
       renderAdminTable();
       checkSyncStatus();
     };
-  
   </script>
 </body>
 </html>
