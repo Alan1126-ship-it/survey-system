@@ -914,8 +914,7 @@
         issues: studentCart.filter(x => x.issueText).map(x => ({ code: x.code, text: x.issueText }))
       });
 
-      alert("【借用成功】已成功借用 " + studentCart.length + " 件設備！
-若您有描述問題，老師與助教已同步在後台接收到您的文字描述紀錄。");
+      alert("【借用成功】已成功借用 " + studentCart.length + " 件設備！\n若您有描述問題，老師與助教已同步在後台接收到您的文字描述紀錄。");
       studentCart = [];
       renderStudentCart();
     }
@@ -1317,6 +1316,7 @@
       renderAdminTable();
       checkSyncStatus();
     };
+  
   </script>
 </body>
 </html>
