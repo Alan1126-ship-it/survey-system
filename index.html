@@ -486,6 +486,7 @@
 
   <!-- 系統核心邏輯與資料庫 -->
   <script>
+
     // 預設資料庫：母機 (Assets) 與 子配件 (Components)
     const initialAssetDatabase = [
       {
@@ -494,7 +495,7 @@
         category: "全測站儀",
         isParent: true,
         children: ["BAT-TS01-A", "BAT-TS01-B", "TRIPOD-01"],
-        desc: "2秒測角精度，雙軸傾斜補償，支援無稜鏡測距500m。實習主力全站儀。/ Độ chính xác 2", bù nghiêng 2 trục, đo không gương 500m.",
+        desc: "2秒測角精度，雙軸傾斜補償，支援無稜鏡測距500m。實習主力全站儀。/ Độ chính xác 2秒, bù nghiêng 2 trục, đo không gương 500m.",
         status: "AVAILABLE",
         currentBorrower: null,
         history: [
@@ -588,7 +589,7 @@
         category: "腳架與標尺",
         isParent: false,
         parentCode: "TS-01",
-        desc: "5/8吋螺紋，快扣與蝴蝶旋鈕鎖緊正常。/ Ốc nối 5/8", khóa gạt chắc chắn.",
+        desc: "5/8吋螺紋，快扣與蝴蝶旋鈕鎖緊正常。/ Ốc nối 5/8吋, khóa gạt chắc chắn.",
         status: "AVAILABLE",
         history: [{ date: "2025-09-01", note: "踏板穩固。/ Khóa chắc chắn." }]
       },
@@ -1333,6 +1334,7 @@ Chỉ dành riêng cho Giáo viên!");
       renderAdminTable();
       checkSyncStatus();
     };
+  
   </script>
 </body>
 </html>
