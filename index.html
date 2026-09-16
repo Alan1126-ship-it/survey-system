@@ -61,8 +61,8 @@
   <!-- 雲端同步狀態指示條 -->
   <div id="sync-status-bar" class="bg-indigo-950 text-indigo-200 border-b border-indigo-900 px-4 py-1.5 text-xs flex justify-between items-center max-w-6xl mx-auto w-full">
     <div class="flex items-center space-x-2">
-      <span id="sync-dot" class="w-2 h-2 rounded-full bg-amber-400"></span>
-      <span id="sync-text">本地離線模式 (點右側按鈕設定 Google 試算表連線)</span>
+      <span id="sync-dot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+      <span id="sync-text">雲端試算表同步已啟用 (Google Sheets 連線正常)</span>
     </div>
     <button onclick="openWebhookConfigModal()" class="text-indigo-300 hover:text-white underline text-[11px]">
       設定 Webhook 網址
@@ -605,8 +605,10 @@
     let html5QrScanner = null;
     let inspectingCode = null;
 
+    const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbwyGLYIzJK-nFEoUNMB5fiXUwG77BWOQWq_e4lqpCzi24X5Pyfnl5MwtRU-x3729rUj/exec";
+
     function getGasUrl() {
-      return localStorage.getItem('survey_prod_gas_url_v8') || localStorage.getItem('survey_prod_gas_url_v7') || '';
+      return localStorage.getItem('survey_prod_gas_url_v8') || DEFAULT_GAS_URL;
     }
 
     function setGasUrl(url) {
