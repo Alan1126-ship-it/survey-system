@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>建國科技大學 土木工程系 - 測量與航測儀器數位履歷管理系統</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- HTML5 QR Code Scanner -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <!-- QRCode.js for generating QR stickers in Admin -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap');
+    body { font-family: 'Noto Sans TC', sans-serif; }
+    .badge-available { background-color: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+    .badge-borrowed { background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+    .badge-repair { background-color: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+    .badge-child { background-color: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; }
+    .custom-scroll::-webkit-scrollbar { width: 5px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-900 min-h-screen flex flex-col antialiased">
+
+  <!-- 頂部導航列 (中越雙語高對比) -->
+  <header class="bg-slate-900 text-white sticky top-0 z-40 shadow-md">
+    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow font-black text-lg">
+          <i class="fa-solid fa-compass-drafting"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="text-sm sm:text-base font-bold tracking-tight">測量實習儀器管理系統</h1>
+            <span id="role-indicator" class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-800 text-slate-300 border border-slate-700">學生 Sinh viên</span>
+          </div>
+          <p class="text-[10px] sm:text-[11px] text-slate-400">HỆ THỐNG QUẢN LÝ & THEO DÕI THIẾT BỊ ĐO ĐẠC (CTU CIVIL)</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-1.5 sm:space-x-2">
+        <button onclick="switchView('student')" id="nav-btn-student" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow">
+          <i class="fa-solid fa-qrcode mr-1"></i>借用 Mượn
+        </button>
+        <button onclick="requireRoleAccess('issues')" id="nav-btn-issues" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700">
+          <i class="fa-solid fa-triangle-exclamation mr-1 text-amber-400"></i>問題 Sự cố
+        </button>
+        <button onclick="requireRoleAccess('admin')" id="nav-btn-admin" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700">
+          <i class="fa-solid fa-sliders mr-1 text-indigo-400"></i>後台 Quản lý
+        </button>
+        <button onclick="openRoleAuthModal()" title="切換權限 Đổi quyền" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border border-slate-700 text-xs">
+          <i class="fa-solid fa-key"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 雲端同步狀態指示條 -->
+  <div id="sync-status-bar" class="bg-indigo-950 text-indigo-200 border-b border-indigo-900 px-4 py-1.5 text-xs flex justify-between items-center max-w-6xl mx-auto w-full">
+    <div class="flex items-center space-x-2">
+      <span id="sync-dot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+      <span id="sync-text">雲端資料庫已連線 / Đã kết nối cơ sở dữ liệu (Google Sheets)</span>
+    </div>
+    <button onclick="openWebhookConfigModal()" class="text-indigo-300 hover:text-white underline text-[11px]">
+      設定 Webhook / Cài đặt
+    </button>
+  </div>
+
+  <!-- 主內容區 -->
+  <main class="max-w-6xl mx-auto px-4 py-6 flex-1 w-full space-y-6">
+
+    <!-- ========================================== -->
+    <!-- VIEW 1: 學生端 - 中越雙語連續掃碼借用 -->
+    <!-- ========================================== -->
+    <div id="view-student" class="space-y-6">
+
+      <!-- 步驟 1: 學生身分與組別 -->
+      <div class="bg-white border-2 border-slate-300 rounded-3xl p-5 shadow-sm space-y-3">
+        <div class="flex justify-between items-center border-b border-slate-200 pb-2">
+          <div class="flex items-center space-x-2">
+            <span class="w-6 h-6 rounded-full bg-indigo-600 text-xs font-black flex items-center justify-center text-white">1</span>
+            <div>
+              <h3 class="font-bold text-slate-900 text-sm">輸入組別資訊 / THÔNG TIN NHÓM</h3>
+              <p class="text-[10px] text-slate-500">本機自動記憶，整學期免再打字 / Tự động ghi nhớ trên máy</p>
+            </div>
+          </div>
+          <span class="text-[11px] text-emerald-700 bg-emerald-100 font-bold px-2 py-0.5 rounded-full">
+            <i class="fa-solid fa-mobile-screen-button mr-1"></i>已鎖定 Ghi nhớ
+          </span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+          <div>
+            <label class="block text-slate-600 font-bold mb-1">班級 / Lớp *</label>
+            <select id="borrow-class" onchange="saveCachedIdentity()" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2 font-bold text-slate-800 focus:border-indigo-600">
+              <option value="越南專班">越南專班 (Lớp Chuyên ban VN)</option>
+              <option value="土木一甲">土木一甲 (Năm 1 - Lớp A)</option>
+              <option value="土木三甲">土木三甲 (Năm 3 - Lớp A)</option>
+              <option value="無人機航測組">無人機航測組 (Nhóm Drone)</option>
+              <option value="專題研究組">專題研究組 (Nhóm Chuyên đề)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-600 font-bold mb-1">組別 / Nhóm *</label>
+            <input type="text" id="borrow-group" oninput="saveCachedIdentity()" placeholder="例：第 1 組 (Nhóm 1)" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2 font-bold text-slate-800 focus:border-indigo-600">
+          </div>
+          <div>
+            <label class="block text-slate-600 font-bold mb-1">組長姓名 / Họ tên *</label>
+            <input type="text" id="borrow-name" oninput="saveCachedIdentity()" placeholder="組長姓名 (Họ tên)" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2 font-bold text-slate-800 focus:border-indigo-600">
+          </div>
+          <div>
+            <label class="block text-slate-600 font-bold mb-1">學號 / MSSV *</label>
+            <input type="text" id="borrow-id" oninput="saveCachedIdentity()" placeholder="學號 (Mã SV)" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2 font-bold text-slate-800 focus:border-indigo-600">
+          </div>
+        </div>
+      </div>
+
+      <!-- 步驟 2: 連續掃碼 QR Code -->
+      <div class="bg-white border-2 border-slate-300 rounded-3xl p-5 shadow-sm space-y-4">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-200 pb-3">
+          <div class="flex items-center space-x-2">
+            <span class="w-6 h-6 rounded-full bg-indigo-600 text-xs font-black flex items-center justify-center text-white">2</span>
+            <div>
+              <h3 class="font-bold text-slate-900 text-sm">連續掃描器材標籤 / QUÉT MÃ QR THIẾT BỊ</h3>
+              <p class="text-[11px] text-slate-500 font-medium">掃主機會自動帶出子配件；亦可單獨掃配件 / Quét thân máy sẽ tự động kèm phụ kiện</p>
+            </div>
+          </div>
+          <div class="flex space-x-2 w-full sm:w-auto">
+            <button onclick="startContinuousScan()" class="flex-1 sm:flex-none px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center justify-center space-x-2 shadow-lg shadow-indigo-200 active:scale-95 transition">
+              <i class="fa-solid fa-camera text-sm"></i>
+              <span>相機連續掃碼 (Bật Camera Quét)</span>
+            </button>
+            <button onclick="openQuickPickModal()" class="px-3.5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs font-bold border border-slate-300">
+              <i class="fa-solid fa-list mr-1"></i>手動快選 (Chọn nhanh)
+            </button>
+          </div>
+        </div>
+
+        <!-- 連續相機視窗 -->
+        <div id="camera-box" class="hidden bg-slate-900 rounded-2xl p-3 space-y-2 border-2 border-indigo-500">
+          <div class="flex justify-between items-center text-white">
+            <span class="text-xs font-bold text-amber-300 animate-pulse flex items-center">
+              <i class="fa-solid fa-circle-dot mr-1.5 text-[8px]"></i>連續掃瞄中：對準 QR Code (Đang quét...)
+            </span>
+            <button onclick="stopContinuousScan()" class="text-xs bg-slate-800 text-slate-200 px-3 py-1 rounded-lg border border-slate-700">關閉 (Đóng)</button>
+          </div>
+          <div id="qr-camera-stream" class="w-full max-w-xs mx-auto overflow-hidden rounded-xl border border-slate-700"></div>
+        </div>
+
+        <!-- 已掃入的清單籃 -->
+        <div>
+          <div class="flex justify-between items-center mb-3">
+            <h4 class="text-xs font-bold text-slate-700 flex items-center space-x-2">
+              <span>本次已掃入設備清單 (Danh sách mượn)：</span>
+              <span id="cart-item-count" class="px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-xs font-black border border-indigo-300">0 件 / món</span>
+            </h4>
+            <span class="text-[11px] text-indigo-700 font-bold"><i class="fa-solid fa-hand-pointer mr-1"></i>點卡片開箱點驗 / Bấm để kiểm tra</span>
+          </div>
+
+          <div id="cart-items-container" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+          
+          <div id="cart-empty-placeholder" class="py-12 border-2 border-dashed border-slate-300 rounded-2xl text-center text-slate-400 text-xs space-y-1">
+            <i class="fa-solid fa-qrcode text-3xl mb-1 text-slate-300"></i>
+            <p class="font-bold text-slate-500">尚未掃描任何儀器標籤 / Chưa quét thiết bị nào</p>
+            <p class="text-[11px]">按上方「相機連續掃碼」依序掃瞄 / Bấm nút trên để mở Camera</p>
+          </div>
+        </div>
+
+        <!-- 步驟 3: 送出整組清單 -->
+        <div class="pt-3 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-3">
+          <p class="text-[11px] text-slate-500">全組負共同保管責任 / Cả nhóm cùng chịu trách nhiệm bảo quản thiết bị.</p>
+          <button onclick="submitStudentBorrowCart()" id="btn-submit-cart" disabled class="w-full sm:w-auto px-6 py-3 bg-slate-300 text-slate-500 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center space-x-2 cursor-not-allowed">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+            <span>確認設備無誤 ➔ 送出整組借用 (XÁC NHẬN MƯỢN)</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- VIEW 2: 老師/助教端 - 即時問題與維修看板 -->
+    <!-- ========================================== -->
+    <div id="view-issues" class="space-y-6 hidden">
+      <div class="bg-white border-2 border-slate-300 rounded-3xl p-5 shadow-sm space-y-4">
+        <div class="flex justify-between items-center border-b border-slate-200 pb-3">
+          <div>
+            <h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center space-x-2">
+              <i class="fa-solid fa-clipboard-question text-amber-500"></i>
+              <span>學生問題通報看板 / BẢNG BÁO CÁO SỰ CỐ</span>
+            </h3>
+            <p class="text-xs text-slate-500 mt-0.5">學生文字描述的異常狀況 / Mô tả sự cố do sinh viên báo cáo</p>
+          </div>
+          <span id="issues-pending-badge" class="text-xs px-3 py-1 bg-amber-100 text-amber-800 rounded-full font-black border border-amber-300">
+            0 筆待處理 / Đang chờ
+          </span>
+        </div>
+
+        <div id="issues-list-container" class="space-y-3"></div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- VIEW 3: 老師端 - 無限擴充資產庫與管理後台 -->
+    <!-- ========================================== -->
+    <div id="view-admin" class="space-y-6 hidden">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="bg-white border-2 border-slate-300 p-4 rounded-2xl">
+          <p class="text-xs font-bold text-slate-500">主機總在冊數 (Tổng máy)</p>
+          <p id="stat-parents-total" class="text-2xl font-black text-slate-900 mt-1">0</p>
+        </div>
+        <div class="bg-white border-2 border-slate-300 p-4 rounded-2xl">
+          <p class="text-xs font-bold text-emerald-600">在庫可借 (Sẵn sàng)</p>
+          <p id="stat-parents-avail" class="text-2xl font-black text-emerald-600 mt-1">0</p>
+        </div>
+        <div class="bg-white border-2 border-slate-300 p-4 rounded-2xl">
+          <p class="text-xs font-bold text-amber-600">實習出借中 (Đang mượn)</p>
+          <p id="stat-parents-borrowed" class="text-2xl font-black text-amber-600 mt-1">0</p>
+        </div>
+        <div class="bg-white border-2 border-slate-300 p-4 rounded-2xl">
+          <p class="text-xs font-bold text-rose-600">故障待修 (Đang hỏng)</p>
+          <p id="stat-parents-repair" class="text-2xl font-black text-rose-600 mt-1">0</p>
+        </div>
+      </div>
+
+      <div class="bg-white border-2 border-slate-300 rounded-3xl p-5 shadow-sm space-y-4">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+          <div>
+            <h3 class="font-bold text-slate-900 text-sm">設備資產總表 / QUẢN LÝ TẤT CẢ THIẾT BỊ</h3>
+            <p class="text-xs text-slate-500">點擊項目可產生 QR Code 貼紙列印或更換配件綁定 / In mã QR & Đổi phụ kiện</p>
+          </div>
+          <div class="flex space-x-2 w-full sm:w-auto">
+            <button onclick="openCreateAssetModal('PARENT')" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow">
+              <i class="fa-solid fa-plus mr-1"></i>新增主機 (Thêm máy)
+            </button>
+            <button onclick="openCreateAssetModal('CHILD')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold shadow">
+              <i class="fa-solid fa-puzzle-piece mr-1"></i>新增子配件 (Thêm phụ kiện)
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-700">
+            <thead class="bg-slate-100 text-slate-600 border-b-2 border-slate-300">
+              <tr>
+                <th class="p-3">Asset ID (Mã QR)</th>
+                <th class="p-3">設備名稱 / Tên thiết bị</th>
+                <th class="p-3">子配件 / Phụ kiện đi kèm</th>
+                <th class="p-3">狀態 / Tình trạng</th>
+                <th class="p-3">借用人 / Người mượn</th>
+                <th class="p-3 text-right">操作 / Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="admin-table-body" class="divide-y divide-slate-200"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ========================================== -->
+  <!-- MODAL 1: 儀器身分證、中越雙語點驗與問題回報 -->
+  <!-- ========================================== -->
+  <div id="modal-item-inspect" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto custom-scroll text-xs border-2 border-slate-300">
+      <div class="flex justify-between items-start border-b border-slate-200 pb-2">
+        <div>
+          <span id="inspect-code" class="text-xl font-black text-indigo-700 font-mono">TS-01</span>
+          <h4 id="inspect-name" class="text-sm font-bold text-slate-900 mt-0.5">Topcon 全測站儀 GTS-255</h4>
+          <span id="inspect-type" class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-bold border border-slate-300">全測站儀 (Toàn đạc)</span>
+        </div>
+        <button onclick="closeModal('modal-item-inspect')" class="text-slate-400 hover:text-slate-800 text-2xl">&times;</button>
+      </div>
+
+      <!-- 功能說明 -->
+      <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-1">
+        <p class="font-bold text-slate-700 flex items-center">
+          <i class="fa-solid fa-circle-info text-indigo-600 mr-1.5"></i>功能規格指引 / Thông số & Hướng dẫn:
+        </p>
+        <p id="inspect-desc" class="text-slate-600 leading-relaxed font-medium">說明載入中...</p>
+      </div>
+
+      <!-- 歷史紀錄 -->
+      <div class="border-t border-slate-200 pt-2.5 space-y-1.5">
+        <p class="font-bold text-slate-700 flex items-center">
+          <i class="fa-solid fa-clock-rotate-left text-amber-600 mr-1.5"></i>歷史維修舊傷紀錄 / Lịch sử bảo trì & Vết xước cũ:
+        </p>
+        <div id="inspect-history-list" class="space-y-1 max-h-32 overflow-y-auto custom-scroll pr-1"></div>
+      </div>
+
+      <!-- 專屬檢查項目 (雙語對照) -->
+      <div class="border-t border-slate-200 pt-2.5 space-y-2">
+        <p class="font-bold text-slate-800">開箱狀態核對勾選 / Xác nhận kiểm tra khi nhận máy:</p>
+        <div id="inspect-category-checks" class="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-indigo-50/50 p-3 rounded-2xl border border-indigo-100 font-medium text-slate-700"></div>
+      </div>
+
+      <!-- 文字描述新發現之問題 (免拍照) -->
+      <div class="border-t border-slate-200 pt-2.5 space-y-2">
+        <p class="font-bold text-rose-700 flex items-center">
+          <i class="fa-solid fa-pen-to-square mr-1.5"></i>若發現新問題請文字描述 / Mô tả sự cố nếu phát hiện hỏng hóc:
+        </p>
+        <textarea id="inspect-user-issue-text" rows="3" placeholder="請以文字詳細描述異常現象（例如：水平微動螺旋鎖緊後仍會打滑、電池開機後約10分鐘即沒電、水準儀長氣泡管有些微偏...） / Xin mô tả chi tiết lỗi (ví dụ: ốc vi động bị kẹt, pin yếu nhanh, bọt thủy bị lệch...)" class="w-full bg-slate-50 border-2 border-slate-300 rounded-2xl p-3 text-slate-800 text-xs focus:border-indigo-600 focus:bg-white"></textarea>
+      </div>
+
+      <div class="flex space-x-2 pt-2">
+        <button onclick="closeModal('modal-item-inspect')" class="w-1/3 py-2.5 bg-slate-200 text-slate-700 font-bold rounded-xl">取消 (Hủy)</button>
+        <button onclick="saveInspectionAndIssue()" class="w-2/3 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow">確認保存 (Lưu xác nhận)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL 2: 專屬 QR Code 貼紙預覽與列印視窗 -->
+  <!-- ========================================== -->
+  <div id="modal-qr-print" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-center text-xs border-2 border-slate-300">
+      <div class="flex justify-between items-center border-b border-slate-200 pb-2">
+        <h3 class="font-bold text-slate-900 text-sm">QR Code 標籤貼紙 / Tem mã QR</h3>
+        <button onclick="closeModal('modal-qr-print')" class="text-slate-400 hover:text-slate-800 text-lg">&times;</button>
+      </div>
+      
+      <!-- 標籤視覺呈現 (中越對照) -->
+      <div id="qr-sticker-card" class="p-4 bg-white border-2 border-slate-900 rounded-2xl space-y-1.5 inline-block shadow-md">
+        <p class="font-bold text-slate-900 text-xs tracking-wider">建國科大 土木工程系</p>
+        <p class="text-[9px] text-slate-500 font-bold uppercase">Khoa Xây dựng - ĐH Kiến Quốc</p>
+        <div id="qr-code-graphic" class="flex justify-center p-2 bg-white rounded-lg"></div>
+        <p id="qr-sticker-code" class="font-black text-slate-900 text-base font-mono tracking-wider">TS-01</p>
+        <p id="qr-sticker-name" class="text-[11px] text-slate-700 font-semibold max-w-[200px] truncate">Topcon 全測站儀 GTS-255</p>
+        <p class="text-[9px] text-slate-400">掃碼借還・通報 / Quét mã mượn trả</p>
+      </div>
+
+      <p class="text-slate-500 text-[11px]">QR 內容為純 Asset ID，換網域永久免重印 / Mã vĩnh viễn không đổi theo tên miền</p>
+
+      <div class="flex space-x-2 pt-2">
+        <button onclick="closeModal('modal-qr-print')" class="w-1/2 py-2 bg-slate-200 text-slate-700 font-bold rounded-xl">關閉 (Đóng)</button>
+        <button onclick="window.print()" class="w-1/2 py-2 bg-indigo-600 text-white font-bold rounded-xl shadow">
+          <i class="fa-solid fa-print mr-1"></i>列印 (In tem)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL 3: 權限密碼登入切換 -->
+  <!-- ========================================== -->
+  <div id="modal-role-auth" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-xs border-2 border-slate-300">
+      <div class="flex justify-between items-center border-b border-slate-200 pb-2">
+        <h3 class="font-bold text-slate-900 text-sm flex items-center space-x-2">
+          <i class="fa-solid fa-shield-halved text-indigo-600"></i>
+          <span>切換權限 / Đổi quyền truy cập</span>
+        </h3>
+        <button onclick="closeModal('modal-role-auth')" class="text-slate-400 hover:text-slate-800 text-lg">&times;</button>
+      </div>
+      
+      <div class="space-y-1.5 text-slate-600">
+        <div class="p-2 bg-slate-50 border border-slate-200 rounded-xl flex justify-between items-center">
+          <span>① 學生模式 (Sinh viên)</span>
+          <span class="font-mono font-bold text-slate-400">免密碼 / 1234</span>
+        </div>
+        <div class="p-2 bg-slate-50 border border-slate-200 rounded-xl flex justify-between items-center">
+          <span>② 實習助教 (Trợ giảng TA)</span>
+          <span class="font-mono font-bold text-emerald-600">5678</span>
+        </div>
+        <div class="p-2 bg-slate-50 border border-slate-200 rounded-xl flex justify-between items-center">
+          <span>③ 梁老師 (Giáo viên Admin)</span>
+          <span class="font-mono font-bold text-indigo-600">9999</span>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-slate-700 font-bold mb-1">輸入通關密碼 / Mật khẩu:</label>
+        <input type="password" id="input-role-pwd" placeholder="Mật khẩu..." class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2.5 text-slate-900 font-mono text-sm focus:border-indigo-600">
+      </div>
+
+      <div class="flex space-x-2 pt-1">
+        <button onclick="closeModal('modal-role-auth')" class="w-1/3 py-2.5 bg-slate-200 text-slate-700 font-bold rounded-xl">取消 (Hủy)</button>
+        <button onclick="verifyRoleLogin()" class="w-2/3 py-2.5 bg-indigo-600 text-white font-bold rounded-xl shadow">登入 (Đăng nhập)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL 4: 新增儀器 / 子配件視窗 -->
+  <!-- ========================================== -->
+  <div id="modal-create-asset" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-3 text-xs border-2 border-slate-300 max-h-[90vh] overflow-y-auto custom-scroll">
+      <div class="flex justify-between items-center border-b border-slate-200 pb-2">
+        <h3 id="create-modal-title" class="font-bold text-slate-900 text-sm">新增儀器主機 (Thêm thiết bị)</h3>
+        <button onclick="closeModal('modal-create-asset')" class="text-slate-400 hover:text-slate-800 text-lg">&times;</button>
+      </div>
+
+      <form onsubmit="submitCreateAsset(event)" class="space-y-3">
+        <input type="hidden" id="create-is-child" value="0">
+        
+        <div>
+          <label class="block text-slate-700 font-bold mb-1">Asset ID (QR唯一碼) *</label>
+          <input type="text" id="create-code" placeholder="例：TS-02 / TH-OLD-02 / BAT-DR01-03" required class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2.5 font-mono font-bold text-slate-900 focus:border-indigo-600 uppercase">
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-slate-700 font-bold mb-1">類別 / Phân loại *</label>
+            <select id="create-category" onchange="toggleParentBindingField()" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2 font-bold text-slate-800">
+              <option value="全測站儀">全測站儀 (Toàn đạc)</option>
+              <option value="自動水準儀">水準儀 (Thủy bình)</option>
+              <option value="舊式經緯儀">舊式經緯儀 (Kinh vĩ cổ)</option>
+              <option value="舊式水準儀">舊式水準儀 (Thủy bình cổ)</option>
+              <option value="無人機系統">無人機 (Drone UAV)</option>
+              <option value="專用電池">專用電池 (Pin)</option>
+              <option value="螺旋槳配件">螺旋槳 (Cánh quạt)</option>
+              <option value="充電設備">充電設備 (Sạc)</option>
+              <option value="腳架與標尺">腳架/標尺 (Chân/Mia)</option>
+              <option value="其他專用耗材">其他配件 (Khác)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-700 font-bold mb-1">品名型號 / Tên model *</label>
+            <input type="text" id="create-name" placeholder="例：Leica TS06 / Wild T2" required class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2 font-bold text-slate-800">
+          </div>
+        </div>
+
+        <div id="field-parent-bind" class="hidden">
+          <label class="block text-slate-700 font-bold mb-1">所屬父主機 / Máy chủ đi kèm：</label>
+          <select id="create-parent-code" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2 font-bold text-slate-800"></select>
+        </div>
+
+        <div>
+          <label class="block text-slate-700 font-bold mb-1">功能特性指引 / Thông số & Hướng dẫn *</label>
+          <textarea id="create-desc" rows="2" placeholder="詳細說明測角精度、校正狀況或操作說明..." required class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2 text-slate-800"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-slate-700 font-bold mb-1">初始歷史紀錄 / Ghi chú ban đầu：</label>
+          <input type="text" id="create-history" placeholder="例：2026/09 整理入冊" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2 text-slate-800">
+        </div>
+
+        <div class="flex space-x-2 pt-2">
+          <button type="button" onclick="closeModal('modal-create-asset')" class="w-1/3 py-2.5 bg-slate-200 text-slate-700 font-bold rounded-xl">取消</button>
+          <button type="submit" class="w-2/3 py-2.5 bg-indigo-600 text-white font-bold rounded-xl shadow">確認建檔 (Lưu)</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL 5: Google Sheets Webhook 設定 -->
+  <!-- ========================================== -->
+  <div id="modal-webhook-config" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-3 text-xs border-2 border-slate-300">
+      <div class="flex justify-between items-center border-b border-slate-200 pb-2">
+        <h3 class="font-bold text-slate-900 text-sm flex items-center space-x-1.5">
+          <i class="fa-solid fa-cloud-arrow-up text-indigo-600"></i>
+          <span>Google Sheets Webhook API 設定</span>
+        </h3>
+        <button onclick="closeModal('modal-webhook-config')" class="text-slate-400 hover:text-slate-800 text-lg">&times;</button>
+      </div>
+      <p class="text-slate-600 leading-relaxed">
+        請貼上 Google Apps Script 發布之 Web App 網址 / Dán link Web App Google Apps Script vào đây:
+      </p>
+      <div>
+        <label class="block text-slate-700 font-bold mb-1">Web App Exec URL：</label>
+        <input type="url" id="cfg-gas-url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2.5 text-slate-900 font-mono">
+      </div>
+      <div class="flex space-x-2 pt-2">
+        <button onclick="saveWebhookConfig()" class="w-full py-2.5 bg-indigo-600 text-white font-bold rounded-xl shadow">儲存連線 (Lưu kết nối)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL 6: 手動快選視窗 -->
+  <!-- ========================================== -->
+  <div id="modal-quick-pick" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-5 shadow-2xl space-y-3 text-xs border-2 border-slate-300">
+      <div class="flex justify-between items-center border-b border-slate-200 pb-2">
+        <h3 class="font-bold text-slate-900 text-sm">手動快選設備 / Chọn nhanh thiết bị</h3>
+        <button onclick="closeModal('modal-quick-pick')" class="text-slate-400 hover:text-slate-800 text-lg">&times;</button>
+      </div>
+      <div id="quick-pick-list" class="space-y-2 max-h-64 overflow-y-auto custom-scroll pr-1"></div>
+      <button onclick="closeModal('modal-quick-pick')" class="w-full py-2 bg-slate-200 text-slate-700 font-bold rounded-xl">關閉 (Đóng)</button>
+    </div>
+  </div>
+
+  <!-- 系統核心邏輯與資料庫 -->
+  <script>
+    // 預設資料庫：母機 (Assets) 與 子配件 (Components)
+    const initialAssetDatabase = [
+      {
+        code: "TS-01",
+        name: "Topcon 全測站儀 GTS-255 (Máy toàn đạc)",
+        category: "全測站儀",
+        isParent: true,
+        children: ["BAT-TS01-A", "BAT-TS01-B", "TRIPOD-01"],
+        desc: "2秒測角精度，雙軸傾斜補償，支援無稜鏡測距500m。實習主力全站儀。/ Độ chính xác 2", bù nghiêng 2 trục, đo không gương 500m.",
+        status: "AVAILABLE",
+        currentBorrower: null,
+        history: [
+          { date: "2025-09-01", note: "原廠年度校正合格，視準軸i角正常。/ Hiệu chuẩn đạt chuẩn." },
+          { date: "2026-03-01", note: "微動螺旋正常，目鏡罩微舊。/ Ốc vi động tốt." }
+        ]
+      },
+      {
+        code: "TH-OLD-01",
+        name: "Wild T2 光學經緯儀 (Máy kinh vĩ quang học cổ)",
+        category: "舊式經緯儀",
+        isParent: true,
+        children: ["TRIPOD-02"],
+        desc: "瑞士經典測微度盤經緯儀。供高精度測角教學與光學讀數盤原理示範。/ Dùng dạy nguyên lý bàn độ quang học Thụy Sĩ.",
+        status: "AVAILABLE",
+        currentBorrower: null,
+        history: [
+          { date: "2025-10-10", note: "光學測微反光鏡清潔潤滑完成，照準部轉動順暢。/ Bảo dưỡng quang học hoàn tất." }
+        ]
+      },
+      {
+        code: "AL-01",
+        name: "Sokkia 自動水準儀 B40 (Máy thủy bình tự động)",
+        category: "自動水準儀",
+        isParent: true,
+        children: ["STAFF-01", "PLATE-01", "TRIPOD-03"],
+        desc: "24倍光學望遠鏡，磁阻尼自動補償回彈靈敏，水準測量主力機。/ Độ phóng đại 24X, bộ tự động bù trừ chuẩn xác.",
+        status: "AVAILABLE",
+        currentBorrower: null,
+        history: [
+          { date: "2025-09-15", note: "i角校驗合格，自動補償按鈕正常。/ Kiểm tra góc i chuẩn." }
+        ]
+      },
+      {
+        code: "DRONE-01",
+        name: "DJI Matrice 350 RTK (Drone khảo sát UAV)",
+        category: "無人機系統",
+        isParent: true,
+        children: ["BAT-DR01-01", "BAT-DR01-02", "PROP-DR01-01", "RC-DR01-01"],
+        desc: "六向雙目避障，航測RTK公分級定位，支援禪思P1正射航測相機。/ Định vị RTK cm, cảm biến 6 hướng, camera bay chụp P1.",
+        status: "AVAILABLE",
+        currentBorrower: null,
+        history: [
+          { date: "2026-02-20", note: "韌體更新完成，IMU與指南針校驗正常。/ Cập nhật firmware, cân chỉnh IMU tốt." }
+        ]
+      },
+      // 子配件
+      {
+        code: "BAT-TS01-A",
+        name: "Topcon BT-52QA 電池 (Pin máy toàn đạc)",
+        category: "專用電池",
+        isParent: false,
+        parentCode: "TS-01",
+        desc: "7.2V 2700mAh Ni-MH 電池，續航約4~5小時。/ Pin sạc 7.2V, dùng liên tục 4-5 tiếng.",
+        status: "AVAILABLE",
+        history: [{ date: "2025-09-01", note: "隨機服役啟用。/ Bắt đầu sử dụng." }]
+      },
+      {
+        code: "BAT-TS01-B",
+        name: "Topcon BT-52QA 備用電池 (Pin dự phòng)",
+        category: "專用電池",
+        isParent: false,
+        parentCode: "TS-01",
+        desc: "7.2V 2700mAh Ni-MH 電池。/ Pin sạc dự phòng.",
+        status: "AVAILABLE",
+        history: [{ date: "2025-09-01", note: "隨機服役啟用。/ Bắt đầu sử dụng." }]
+      },
+      {
+        code: "PROP-DR01-01",
+        name: "M350 2110 摺疊螺旋槳 (Cánh quạt Drone)",
+        category: "螺旋槳配件",
+        isParent: false,
+        parentCode: "DRONE-01",
+        desc: "碳纖高強度低噪音槳葉，無磕碰微裂即可安全飛行。/ Cánh quạt carbon giảm ồn, an toàn bay.",
+        status: "AVAILABLE",
+        history: [{ date: "2026-02-20", note: "全新品啟用。/ Hàng mới xuất kho." }]
+      },
+      {
+        code: "RC-DR01-01",
+        name: "DJI RC Plus 帶螢幕遙控器 (Tay điều khiển)",
+        category: "其他專用耗材",
+        isParent: false,
+        parentCode: "DRONE-01",
+        desc: "7吋高亮螢幕遙控器，雙控航線規劃專用。/ Màn hình 7 inch độ sáng cao, lập tuyến bay.",
+        status: "AVAILABLE",
+        history: [{ date: "2026-02-20", note: "檢驗正常。/ Hoạt động tốt." }]
+      },
+      {
+        code: "TRIPOD-01",
+        name: "重型雙鎖腳架 01 (Chân máy chân nhôm)",
+        category: "腳架與標尺",
+        isParent: false,
+        parentCode: "TS-01",
+        desc: "5/8吋螺紋，快扣與蝴蝶旋鈕鎖緊正常。/ Ốc nối 5/8", khóa gạt chắc chắn.",
+        status: "AVAILABLE",
+        history: [{ date: "2025-09-01", note: "踏板穩固。/ Khóa chắc chắn." }]
+      },
+      {
+        code: "STAFF-01",
+        name: "5m 雙面水準箱尺 01 (Mia nhôm 5m)",
+        category: "腳架與標尺",
+        isParent: false,
+        parentCode: "AL-01",
+        desc: "五節鋁合金伸縮標尺，卡扣按鈕完好。/ Mia rút nhôm 5 đoạn, nút bấm tốt.",
+        status: "AVAILABLE",
+        history: [{ date: "2025-09-01", note: "刻度清晰。/ Vạch số rõ nét." }]
+      },
+      {
+        code: "PLATE-01",
+        name: "鑄鐵水準尺墊 01 (Cóc đo thủy bình)",
+        category: "腳架與標尺",
+        isParent: false,
+        parentCode: "AL-01",
+        desc: "雙提手重型鐵墊。/ Cóc sắt nặng có quai cầm.",
+        status: "AVAILABLE",
+        history: [{ date: "2025-09-01", note: "功能完好。/ Tốt." }]
+      }
+    ];
+
+    const initialIssuesData = [
+      {
+        id: "ISSUE-1001",
+        deviceCode: "TS-01",
+        date: "2026-03-12 14:10",
+        reporter: "越南專班 第 1 組 (Nguyễn Văn A)",
+        description: "水平微動螺旋鎖緊時依然有些微滑動，物鏡對焦環轉動偏緊。 / Ốc vi động ngang bị trượt nhẹ khi siết, vòng lấy nét hơi chặt.",
+        status: "PENDING",
+        resolutionNote: ""
+      }
+    ];
+
+    let currentRole = "STUDENT";
+    let studentCart = [];
+    let html5QrScanner = null;
+    let inspectingCode = null;
+
+    function getAssets() {
+      const data = localStorage.getItem('survey_prod_assets_v7');
+      if (!data) {
+        localStorage.setItem('survey_prod_assets_v7', JSON.stringify(initialAssetDatabase));
+        return initialAssetDatabase;
+      }
+      return JSON.parse(data);
+    }
+
+    function saveAssets(list) {
+      localStorage.setItem('survey_prod_assets_v7', JSON.stringify(list));
+      renderAdminTable();
+    }
+
+    function getIssues() {
+      const data = localStorage.getItem('survey_prod_issues_v7');
+      if (!data) {
+        localStorage.setItem('survey_prod_issues_v7', JSON.stringify(initialIssuesData));
+        return initialIssuesData;
+      }
+      return JSON.parse(data);
+    }
+
+    function saveIssues(list) {
+      localStorage.setItem('survey_prod_issues_v7', JSON.stringify(list));
+      renderIssuesBoard();
+    }
+
+    function loadCachedIdentity() {
+      const cached = localStorage.getItem('survey_student_cached_id_v7');
+      if (cached) {
+        const id = JSON.parse(cached);
+        document.getElementById('borrow-class').value = id.class || '越南專班';
+        document.getElementById('borrow-group').value = id.group || '';
+        document.getElementById('borrow-name').value = id.name || '';
+        document.getElementById('borrow-id').value = id.studentId || '';
+      }
+    }
+
+    function saveCachedIdentity() {
+      const id = {
+        class: document.getElementById('borrow-class').value,
+        group: document.getElementById('borrow-group').value,
+        name: document.getElementById('borrow-name').value,
+        studentId: document.getElementById('borrow-id').value
+      };
+      localStorage.setItem('survey_student_cached_id_v7', JSON.stringify(id));
+    }
+
+    // ==================== 掃碼與借用籃邏輯 ====================
+    function startContinuousScan() {
+      document.getElementById('camera-box').classList.remove('hidden');
+      if (!html5QrScanner) {
+        html5QrScanner = new Html5Qrcode("qr-camera-stream");
+      }
+      html5QrScanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 220, height: 220 } },
+        (decodedText) => { handleIncomingAssetCode(decodedText); },
+        (err) => {}
+      ).catch(err => {
+        alert("無法開啟鏡頭！請確認相機權限或使用「手動快選」。
+Không mở được camera, vui lòng kiểm tra quyền truy cập.");
+        document.getElementById('camera-box').classList.add('hidden');
+      });
+    }
+
+    function stopContinuousScan() {
+      document.getElementById('camera-box').classList.add('hidden');
+      if (html5QrScanner) html5QrScanner.stop().catch(()=>{});
+    }
+
+    function handleIncomingAssetCode(text) {
+      let code = text.trim();
+      if (text.includes("code=")) {
+        const p = new URLSearchParams(text.split('?')[1]);
+        code = p.get('code') || text;
+      }
+      code = code.toUpperCase();
+
+      const assets = getAssets();
+      const item = assets.find(x => x.code === code);
+      if (!item) {
+        alert(`掃描到的編號【${code}】尚未建檔！
+Mã này chưa có trong cơ sở dữ liệu!`);
+        return;
+      }
+
+      if (item.status === 'BORROWED') {
+        alert(`【注意】儀器 ${item.code} 目前正被「${item.currentBorrower.class} ${item.currentBorrower.group}」借用中！
+Thiết bị đang có nhóm khác mượn!`);
+        return;
+      }
+
+      if (!studentCart.some(x => x.code === item.code)) {
+        studentCart.push({
+          code: item.code,
+          name: item.name,
+          category: item.category,
+          isParent: item.isParent,
+          children: item.children || [],
+          desc: item.desc,
+          history: item.history || [],
+          inspected: false,
+          issueText: ""
+        });
+        if (navigator.vibrate) navigator.vibrate(80);
+        renderStudentCart();
+      }
+    }
+
+    function renderStudentCart() {
+      const container = document.getElementById('cart-items-container');
+      const placeholder = document.getElementById('cart-empty-placeholder');
+      const badge = document.getElementById('cart-item-count');
+      const submitBtn = document.getElementById('btn-submit-cart');
+
+      badge.innerText = `${studentCart.length} 件 / món`;
+      container.innerHTML = '';
+
+      if (studentCart.length === 0) {
+        placeholder.classList.remove('hidden');
+        submitBtn.disabled = true;
+        submitBtn.className = "w-full sm:w-auto px-6 py-3 bg-slate-300 text-slate-500 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center space-x-2 cursor-not-allowed";
+        return;
+      }
+
+      placeholder.classList.add('hidden');
+      submitBtn.disabled = false;
+      submitBtn.className = "w-full sm:w-auto px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center space-x-2 shadow-lg shadow-indigo-200 cursor-pointer active:scale-95 transition";
+
+      studentCart.forEach((item, idx) => {
+        let inspectBadge = item.inspected 
+          ? '<span class="text-[10px] px-2 py-0.5 rounded font-bold bg-emerald-100 text-emerald-800 border border-emerald-300"><i class="fa-solid fa-check mr-1"></i>已點驗 / Đã kiểm tra</span>'
+          : '<span class="text-[10px] px-2 py-0.5 rounded font-bold bg-amber-100 text-amber-800 border border-amber-300 animate-pulse"><i class="fa-solid fa-hand-pointer mr-1"></i>點我開箱點驗 / Bấm để kiểm tra</span>';
+
+        let issueTag = item.issueText 
+          ? `<div class="text-[11px] text-rose-700 bg-rose-50 border border-rose-200 p-1.5 rounded-lg mt-1 truncate"><strong>回報問題 (Sự cố):</strong> ${item.issueText}</div>`
+          : '';
+
+        let childrenTag = (item.isParent && item.children && item.children.length > 0)
+          ? `<div class="text-[10px] text-indigo-700 mt-1 flex flex-wrap gap-1 items-center">
+              <i class="fa-solid fa-link mr-1"></i>連帶配件 (Phụ kiện đi kèm):
+              ${item.children.map(c => `<span class="bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-200 font-mono">${c}</span>`).join('')}
+            </div>`
+          : '';
+
+        container.innerHTML += `
+          <div class="bg-white p-3.5 rounded-2xl border-2 ${item.issueText ? 'border-rose-400' : (item.inspected ? 'border-emerald-400' : 'border-slate-300')} shadow-sm flex justify-between items-center space-x-2">
+            <div onclick="openItemInspectModal('${item.code}')" class="flex-1 cursor-pointer">
+              <div class="flex items-center space-x-2">
+                <span class="font-black text-slate-900 text-sm font-mono">${item.code}</span>
+                <span class="text-xs text-slate-800 font-bold">${item.name}</span>
+              </div>
+              <div class="mt-1">${inspectBadge}</div>
+              ${childrenTag}
+              ${issueTag}
+            </div>
+            <button onclick="removeFromStudentCart(${idx})" class="text-slate-400 hover:text-rose-600 p-2 text-sm" title="移出清單 / Xóa">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>
+        `;
+      });
+    }
+
+    function removeFromStudentCart(idx) {
+      studentCart.splice(idx, 1);
+      renderStudentCart();
+    }
+
+    function openItemInspectModal(code) {
+      inspectingCode = code;
+      const item = studentCart.find(x => x.code === code);
+      if (!item) return;
+
+      document.getElementById('inspect-code').innerText = item.code;
+      document.getElementById('inspect-name').innerText = item.name;
+      document.getElementById('inspect-type').innerText = item.category;
+      document.getElementById('inspect-desc').innerText = item.desc || "無規格說明。";
+      document.getElementById('inspect-user-issue-text').value = item.issueText || "";
+
+      const hl = document.getElementById('inspect-history-list');
+      hl.innerHTML = '';
+      if (!item.history || item.history.length === 0) {
+        hl.innerHTML = '<p class="text-slate-400 text-[11px]">尚無送修紀錄 / Chưa có lịch sử bảo trì.</p>';
+      } else {
+        item.history.slice().reverse().forEach(h => {
+          hl.innerHTML += `
+            <div class="bg-slate-100 p-1.5 rounded-lg text-[11px] text-slate-700">
+              <span class="text-amber-700 font-bold mr-1">${h.date}:</span>${h.note}
+            </div>
+          `;
+        });
+      }
+
+      const checksContainer = document.getElementById('inspect-category-checks');
+      checksContainer.innerHTML = '';
+
+      if (item.category.includes("無人機")) {
+        checksContainer.innerHTML = `
+          <label class="flex items-center space-x-1.5"><input type="checkbox" checked class="rounded text-indigo-600"><span>1. 螺旋槳無微裂 (Cánh quạt không nứt)</span></label>
+          <label class="flex items-center space-x-1.5"><input type="checkbox" checked class="rounded text-indigo-600"><span>2. 電池卡扣穩固 (Khóa pin chắc chắn)</span></label>
+          <label class="flex items-center space-x-1.5"><input type="checkbox" checked class="rounded text-indigo-600"><span>3. 鏡頭罩完好 (Bảo vệ camera tốt)</span></label>
+          <label class="flex items-center space-x-1.5"><input type="checkbox" checked class="rounded text-indigo-600"><span>4. 遙控器雙天線正常 (Anten tay cầm tốt)</span></label>
+        `;
+      } else if (item.category.includes("經緯") || item.category.includes("水準") || item.category.includes("全測站")) {
+        checksContainer.innerHTML = `
+          <label class="flex items-center space-x-1.5"><input type="checkbox" checked class="rounded text-indigo-600"><span>1. 鏡頭無碎裂 (Kính ngắm không vỡ)</span></label>
+          <label class="flex items-center space-x-1.5"><input type="checkbox" checked class="rounded text-indigo-600"><span>2. 水平氣泡管居中 (Bọt thủy chuẩn)</span></label>
+          <label class="flex items-center space-x-1.5"><input type="checkbox" checked class="rounded text-indigo-600"><span>3. 微動螺旋順暢 (Ốc vi động trơn tru)</span></label>
+          <label class="flex items-center space-x-1.5"><input type="checkbox" checked class="rounded text-indigo-600"><span>4. 腳架螺栓完好 (Ốc chân máy tốt)</span></label>
+        `;
+      } else {
+        checksContainer.innerHTML = `
+          <label class="flex items-center space-x-1.5"><input type="checkbox" checked class="rounded text-indigo-600"><span>1. 外觀刻度清晰 (Vạch số rõ nét)</span></label>
+          <label class="flex items-center space-x-1.5"><input type="checkbox" checked class="rounded text-indigo-600"><span>2. 伸縮卡扣完好 (Chốt khóa chắc chắn)</span></label>
+        `;
+      }
+
+      document.getElementById('modal-item-inspect').classList.remove('hidden');
+    }
+
+    function saveInspectionAndIssue() {
+      const issue = document.getElementById('inspect-user-issue-text').value.trim();
+      const item = studentCart.find(x => x.code === inspectingCode);
+      if (item) {
+        item.inspected = true;
+        item.issueText = issue;
+      }
+      closeModal('modal-item-inspect');
+      renderStudentCart();
+    }
+
+    function submitStudentBorrowCart() {
+      const cls = document.getElementById('borrow-class').value;
+      const grp = document.getElementById('borrow-group').value.trim();
+      const name = document.getElementById('borrow-name').value.trim();
+      const id = document.getElementById('borrow-id').value.trim();
+
+      if (!grp || !name || !id) {
+        alert("請在步驟 1 填寫組別、姓名與學號！
+Vui lòng điền tên nhóm, họ tên và mã SV!");
+        return;
+      }
+
+      saveCachedIdentity();
+      const now = new Date();
+      const timeStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+      const borrower = { class: cls, group: grp, name: name, id: id, time: timeStr };
+      const assets = getAssets();
+      const issues = getIssues();
+
+      studentCart.forEach(cartItem => {
+        const target = assets.find(x => x.code === cartItem.code);
+        if (target) {
+          target.status = "BORROWED";
+          target.currentBorrower = borrower;
+
+          if (cartItem.issueText) {
+            issues.push({
+              id: `ISSUE-${Date.now().toString().slice(-4)}`,
+              deviceCode: target.code,
+              date: timeStr,
+              reporter: `${cls} ${grp} (${name})`,
+              description: cartItem.issueText,
+              status: "PENDING",
+              resolutionNote: ""
+            });
+            target.history.push({
+              date: timeStr,
+              note: `【學生借出時回報異常】由 ${cls} ${grp} 描述：${cartItem.issueText}`
+            });
+          }
+        }
+      });
+
+      saveAssets(assets);
+      saveIssues(issues);
+
+      dispatchToGoogleSheets("BORROW", {
+        borrower: borrower,
+        items: studentCart.map(x => x.code),
+        issues: studentCart.filter(x => x.issueText).map(x => ({ code: x.code, text: x.issueText }))
+      });
+
+      alert(`【借用成功 / MƯỢN THÀNH CÔNG】
+已成功借用 ${studentCart.length} 件設備！
+Đã mượn thành công các thiết bị đã chọn.`);
+      studentCart = [];
+      renderStudentCart();
+    }
+
+    // ==================== 問題看板管理 ====================
+    function renderIssuesBoard() {
+      const issues = getIssues();
+      const container = document.getElementById('issues-list-container');
+      const countBadge = document.getElementById('issues-pending-badge');
+
+      const pendingCount = issues.filter(i => i.status === 'PENDING').length;
+      countBadge.innerText = `${pendingCount} 筆待處理 / Đang chờ`;
+      container.innerHTML = '';
+
+      if (issues.length === 0) {
+        container.innerHTML = '<div class="py-10 text-center text-slate-400 text-xs">目前無待處理問題 / Không có sự cố nào.</div>';
+        return;
+      }
+
+      issues.slice().reverse().forEach(issue => {
+        let badge = '<span class="px-2.5 py-0.5 rounded font-bold text-[10px] bg-amber-100 text-amber-800 border border-amber-300">待處理 Đang chờ</span>';
+        if (issue.status === 'RESOLVED') badge = '<span class="px-2.5 py-0.5 rounded font-bold text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-300">現場排解 Đã giải quyết</span>';
+        if (issue.status === 'SWAPPED') badge = '<span class="px-2.5 py-0.5 rounded font-bold text-[10px] bg-blue-100 text-blue-800 border border-blue-300">已換機/換電 Đã đổi máy</span>';
+        if (issue.status === 'TO_REPAIR') badge = '<span class="px-2.5 py-0.5 rounded font-bold text-[10px] bg-rose-100 text-rose-800 border border-rose-300">送修 Gửi sửa</span>';
+
+        container.innerHTML += `
+          <div class="bg-slate-50 p-4 rounded-2xl border-2 border-slate-300 space-y-3">
+            <div class="flex justify-between items-start">
+              <div class="flex items-center space-x-2">
+                <span class="font-black text-slate-900 font-mono text-sm">${issue.deviceCode}</span>
+                <span class="text-xs text-slate-600 font-semibold">通報來源：${issue.reporter}</span>
+                <span class="text-[10px] text-slate-400 font-medium">${issue.date}</span>
+              </div>
+              ${badge}
+            </div>
+
+            <div class="bg-white p-3 rounded-xl border border-slate-200 text-xs">
+              <p class="font-bold text-rose-700 mb-1"><i class="fa-solid fa-quote-left mr-1"></i>學生文字通報之問題 (Mô tả sự cố):</p>
+              <p class="text-slate-800 leading-relaxed font-medium">${issue.description}</p>
+            </div>
+
+            ${issue.resolutionNote ? `<p class="text-[11px] text-emerald-700 bg-emerald-50 p-2 rounded-lg border border-emerald-200 font-semibold"><strong>處置紀錄 (Xử lý):</strong> ${issue.resolutionNote}</p>` : ''}
+
+            ${issue.status === 'PENDING' ? `
+              <div class="flex flex-wrap gap-2 pt-1 border-t border-slate-200">
+                <button onclick="handleIssueAction('${issue.id}', 'SWAPPED')" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow">
+                  <i class="fa-solid fa-arrows-rotate mr-1"></i>現場換一台/換電 (Đổi máy khác)
+                </button>
+                <button onclick="handleIssueAction('${issue.id}', 'TO_REPAIR')" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow">
+                  <i class="fa-solid fa-wrench mr-1"></i>安排廠商送修 (Gửi sửa chữa)
+                </button>
+                <button onclick="handleIssueAction('${issue.id}', 'RESOLVED')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow">
+                  <i class="fa-solid fa-check mr-1"></i>調校正常結案 (Đã chỉnh xong)
+                </button>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      });
+    }
+
+    function handleIssueAction(id, action) {
+      const issues = getIssues();
+      const issue = issues.find(i => i.id === id);
+      if (!issue) return;
+
+      const assets = getAssets();
+      const target = assets.find(x => x.code === issue.deviceCode);
+
+      const now = new Date();
+      const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+
+      if (action === 'SWAPPED') {
+        const note = prompt("請輸入換機或更換電池說明 (Ghi chú đổi máy):", "已現場更換備用電池/調撥另一台儀器 / Đã đổi pin hoặc máy khác");
+        if (!note) return;
+        issue.status = "SWAPPED";
+        issue.resolutionNote = `[${dateStr}] ${note}`;
+        if (target) target.history.push({ date: dateStr, note: `【現場處置】${note}` });
+      } else if (action === 'TO_REPAIR') {
+        const vendor = prompt("請輸入聯絡送修廠商或備註 (Đơn vị sửa chữa):", "巨曜儀器公司");
+        if (!vendor) return;
+        issue.status = "TO_REPAIR";
+        issue.resolutionNote = `[${dateStr}] 已排定聯絡 ${vendor} 送修檢測。`;
+        if (target) {
+          target.status = "MAINTENANCE";
+          target.history.push({ date: dateStr, note: `【排定送修】由 ${vendor} 檢修。` });
+        }
+      } else if (action === 'RESOLVED') {
+        issue.status = "RESOLVED";
+        issue.resolutionNote = `[${dateStr}] 老師/助教現場檢視調校正常，排解結案。`;
+        if (target) target.history.push({ date: dateStr, note: `【問題排解】現場調校正常。` });
+      }
+
+      saveIssues(issues);
+      saveAssets(assets);
+      renderIssuesBoard();
+      alert("已更新處理紀錄！
+Đã cập nhật trạng thái xử lý.");
+    }
+
+    // ==================== 後台管理表格 ====================
+    function renderAdminTable() {
+      const assets = getAssets();
+      const parents = assets.filter(a => a.isParent !== false);
+
+      document.getElementById('stat-parents-total').innerText = parents.length;
+      document.getElementById('stat-parents-avail').innerText = parents.filter(x => x.status === 'AVAILABLE').length;
+      document.getElementById('stat-parents-borrowed').innerText = parents.filter(x => x.status === 'BORROWED').length;
+      document.getElementById('stat-parents-repair').innerText = parents.filter(x => x.status === 'MAINTENANCE').length;
+
+      const tbody = document.getElementById('admin-table-body');
+      tbody.innerHTML = '';
+
+      assets.forEach(a => {
+        let badge = '<span class="px-2 py-0.5 rounded font-bold text-[10px] badge-available">在庫可借 (Sẵn sàng)</span>';
+        if (a.status === 'BORROWED') badge = '<span class="px-2 py-0.5 rounded font-bold text-[10px] badge-borrowed">出借中 (Đang mượn)</span>';
+        if (a.status === 'MAINTENANCE') badge = '<span class="px-2 py-0.5 rounded font-bold text-[10px] badge-repair">故障待修 (Đang hỏng)</span>';
+
+        const borrowerText = a.currentBorrower 
+          ? `<strong class="text-slate-900">${a.currentBorrower.class} ${a.currentBorrower.group}</strong> (${a.currentBorrower.name})` 
+          : '<span class="text-slate-400">-</span>';
+
+        let childrenTags = '';
+        if (a.isParent && a.children && a.children.length > 0) {
+          childrenTags = a.children.map(c => `<span class="px-1.5 py-0.5 rounded text-[10px] badge-child font-mono mr-1 inline-block mb-1">${c}</span>`).join('');
+        } else if (!a.isParent) {
+          childrenTags = `<span class="text-[10px] text-slate-500">掛載於 (Thuộc máy): <strong class="text-indigo-700">${a.parentCode || '備用庫'}</strong></span>`;
+        } else {
+          childrenTags = '<span class="text-slate-400">-</span>';
+        }
+
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50">
+            <td class="p-3 font-black text-slate-900 font-mono">${a.code}</td>
+            <td class="p-3">
+              <div class="font-bold text-slate-900">${a.name}</div>
+              <span class="text-[10px] text-indigo-700 font-semibold">${a.category}</span>
+            </td>
+            <td class="p-3 max-w-xs">${childrenTags}</td>
+            <td class="p-3">${badge}</td>
+            <td class="p-3">${borrowerText}</td>
+            <td class="p-3 text-right space-x-1">
+              ${a.status === 'BORROWED' ? `<button onclick="adminReturnItem('${a.code}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold">驗收歸位 (Trả máy)</button>` : ''}
+              <button onclick="openQrPrintModal('${a.code}')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold" title="列印 QR 標籤">
+                <i class="fa-solid fa-qrcode mr-1"></i>In QR
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function adminReturnItem(code) {
+      const assets = getAssets();
+      const item = assets.find(x => x.code === code);
+      if (item) {
+        item.status = "AVAILABLE";
+        item.currentBorrower = null;
+        saveAssets(assets);
+        dispatchToGoogleSheets("RETURN", { deviceCode: code });
+        alert(`儀器 ${item.code} 已完好歸位在庫！
+Thiết bị ${item.code} đã nhập kho an toàn.`);
+      }
+    }
+
+    function openQrPrintModal(code) {
+      const assets = getAssets();
+      const item = assets.find(x => x.code === code);
+      if (!item) return;
+
+      document.getElementById('qr-sticker-code').innerText = item.code;
+      document.getElementById('qr-sticker-name').innerText = item.name;
+
+      const container = document.getElementById('qr-code-graphic');
+      container.innerHTML = '';
+
+      new QRCode(container, {
+        text: item.code,
+        width: 140,
+        height: 140,
+        colorDark : "#000000",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.H
+      });
+
+      document.getElementById('modal-qr-print').classList.remove('hidden');
+    }
+
+    function openCreateAssetModal(type) {
+      document.getElementById('create-is-child').value = (type === 'CHILD') ? "1" : "0";
+      document.getElementById('create-modal-title').innerText = (type === 'CHILD') ? "新增子配件 (Thêm phụ kiện)" : "新增主機設備 (Thêm máy chủ)";
+      
+      const select = document.getElementById('create-parent-code');
+      select.innerHTML = '<option value="庫存備用 (無固定主機)">庫存備用 / Kho dự phòng</option>';
+      const assets = getAssets();
+      assets.filter(a => a.isParent !== false).forEach(p => {
+        select.innerHTML += `<option value="${p.code}">${p.code} (${p.name})</option>`;
+      });
+
+      toggleParentBindingField();
+      document.getElementById('modal-create-asset').classList.remove('hidden');
+    }
+
+    function toggleParentBindingField() {
+      const isChild = document.getElementById('create-is-child').value === "1";
+      const cat = document.getElementById('create-category').value;
+      const field = document.getElementById('field-parent-bind');
+      if (isChild || cat.includes("電池") || cat.includes("螺旋槳") || cat.includes("充電") || cat.includes("配件")) {
+        field.classList.remove('hidden');
+      } else {
+        field.classList.add('hidden');
+      }
+    }
+
+    function submitCreateAsset(e) {
+      e.preventDefault();
+      const code = document.getElementById('create-code').value.trim().toUpperCase();
+      const name = document.getElementById('create-name').value.trim();
+      const cat = document.getElementById('create-category').value;
+      const desc = document.getElementById('create-desc').value.trim();
+      const initNote = document.getElementById('create-history').value.trim() || "全新編號啟用入冊 / Nhập kho";
+      const isChild = !document.getElementById('field-parent-bind').classList.contains('hidden');
+      const parentCode = document.getElementById('create-parent-code').value;
+
+      const assets = getAssets();
+      if (assets.some(x => x.code === code)) {
+        alert("此 Asset ID 已存在！請更換代號。
+Mã thiết bị đã tồn tại!");
+        return;
+      }
+
+      const now = new Date();
+      const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+
+      const newAsset = {
+        code: code,
+        name: name,
+        category: cat,
+        isParent: !isChild,
+        desc: desc,
+        status: "AVAILABLE",
+        history: [{ date: dateStr, note: initNote }]
+      };
+
+      if (isChild) {
+        newAsset.parentCode = parentCode;
+        if (parentCode !== "庫存備用 (無固定主機)") {
+          const parentObj = assets.find(x => x.code === parentCode);
+          if (parentObj) {
+            if (!parentObj.children) parentObj.children = [];
+            parentObj.children.push(code);
+          }
+        }
+      } else {
+        newAsset.children = [];
+      }
+
+      assets.push(newAsset);
+      saveAssets(assets);
+      closeModal('modal-create-asset');
+      alert(`【建檔成功 / THÀNH CÔNG】
+設備 ${code} (${name}) 已建立！`);
+    }
+
+    function openQuickPickModal() {
+      const container = document.getElementById('quick-pick-list');
+      container.innerHTML = '';
+      const assets = getAssets();
+
+      assets.forEach(a => {
+        container.innerHTML += `
+          <div class="flex justify-between items-center p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+            <div>
+              <span class="font-black text-slate-900 font-mono">${a.code}</span>
+              <span class="text-xs text-slate-800 font-bold ml-1">${a.name}</span>
+              <span class="text-[10px] text-indigo-700 block">${a.category}</span>
+            </div>
+            ${a.status === 'AVAILABLE' 
+              ? `<button onclick="handleIncomingAssetCode('${a.code}'); closeModal('modal-quick-pick')" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold">+ 加入 (Thêm)</button>`
+              : `<span class="text-[10px] text-slate-400 font-bold">${a.status === 'BORROWED' ? '借出中 Đang mượn' : '待修 Hỏng'}</span>`
+            }
+          </div>
+        `;
+      });
+
+      document.getElementById('modal-quick-pick').classList.remove('hidden');
+    }
+
+    // 權限切換
+    function openRoleAuthModal() {
+      document.getElementById('input-role-pwd').value = '';
+      document.getElementById('modal-role-auth').classList.remove('hidden');
+    }
+
+    function verifyRoleLogin() {
+      const pwd = document.getElementById('input-role-pwd').value.trim();
+      const badge = document.getElementById('role-indicator');
+
+      if (pwd === "9999") {
+        currentRole = "ADMIN";
+        badge.className = "text-[10px] px-2 py-0.5 rounded-full font-bold bg-indigo-100 text-indigo-900 border border-indigo-300";
+        badge.innerText = "梁老師 (Giáo viên Admin)";
+        alert("歡迎 梁老師！您已切換為最高管理權限。");
+        switchView('admin');
+      } else if (pwd === "5678") {
+        currentRole = "TA";
+        badge.className = "text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-900 border border-emerald-300";
+        badge.innerText = "助教 (Trợ giảng TA)";
+        alert("助教您好！您可以執行驗收與查看問題看板。");
+        switchView('issues');
+      } else {
+        currentRole = "STUDENT";
+        badge.className = "text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-800 text-slate-300 border border-slate-700";
+        badge.innerText = "學生 (Sinh viên)";
+        switchView('student');
+      }
+      closeModal('modal-role-auth');
+    }
+
+    function requireRoleAccess(target) {
+      if (target === 'issues' && currentRole === 'STUDENT') {
+        alert("「問題看板」為助教與老師專用管理介面，請先輸入密碼驗證！
+Dành cho Trợ giảng và Giáo viên!");
+        openRoleAuthModal();
+        return;
+      }
+      if (target === 'admin' && currentRole !== 'ADMIN') {
+        alert("「管理後台」僅限 指導老師 進入，請先輸入老師密碼！
+Chỉ dành riêng cho Giáo viên!");
+        openRoleAuthModal();
+        return;
+      }
+      switchView(target);
+    }
+
+    function switchView(v) {
+      document.getElementById('view-student').classList.add('hidden');
+      document.getElementById('view-issues').classList.add('hidden');
+      document.getElementById('view-admin').classList.add('hidden');
+
+      document.getElementById('nav-btn-student').className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700";
+      document.getElementById('nav-btn-issues').className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700";
+      document.getElementById('nav-btn-admin').className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700";
+
+      if (v === 'student') {
+        document.getElementById('view-student').classList.remove('hidden');
+        document.getElementById('nav-btn-student').className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow";
+      } else if (v === 'issues') {
+        document.getElementById('view-issues').classList.remove('hidden');
+        document.getElementById('nav-btn-issues').className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow";
+        renderIssuesBoard();
+      } else if (v === 'admin') {
+        document.getElementById('view-admin').classList.remove('hidden');
+        document.getElementById('nav-btn-admin').className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow";
+        renderAdminTable();
+      }
+    }
+
+    // Google Sheets Webhook 通訊
+    function openWebhookConfigModal() {
+      const url = localStorage.getItem('survey_prod_gas_url_v7') || '';
+      document.getElementById('cfg-gas-url').value = url;
+      document.getElementById('modal-webhook-config').classList.remove('hidden');
+    }
+
+    function saveWebhookConfig() {
+      const url = document.getElementById('cfg-gas-url').value.trim();
+      localStorage.setItem('survey_prod_gas_url_v7', url);
+      closeModal('modal-webhook-config');
+      checkSyncStatus();
+      alert("Webhook API 設定已儲存！
+Đã lưu cài đặt kết nối.");
+    }
+
+    function checkSyncStatus() {
+      const url = localStorage.getItem('survey_prod_gas_url_v7');
+      const dot = document.getElementById('sync-dot');
+      const txt = document.getElementById('sync-text');
+      if (url) {
+        dot.className = "w-2 h-2 rounded-full bg-emerald-400";
+        txt.innerText = "雲端同步已連線 / Đã kết nối cơ sở dữ liệu (Google Sheets)";
+      } else {
+        dot.className = "w-2 h-2 rounded-full bg-amber-400";
+        txt.innerText = "本地離線模式 / Chế độ ngoại tuyến (Bấm cài đặt để nối Sheets)";
+      }
+    }
+
+    function dispatchToGoogleSheets(actionType, dataPayload) {
+      const url = localStorage.getItem('survey_prod_gas_url_v7');
+      if (!url) return;
+
+      fetch(url, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: actionType, timestamp: new Date().toISOString(), payload: dataPayload })
+      }).then(() => {
+        console.log("Cloud synced:", actionType);
+      }).catch(err => {
+        console.warn("Cloud sync error:", err);
+      });
+    }
+
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+    window.onload = function() {
+      loadCachedIdentity();
+      renderStudentCart();
+      renderIssuesBoard();
+      renderAdminTable();
+      checkSyncStatus();
+    };
+  </script>
+</body>
+</html>
