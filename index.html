@@ -486,7 +486,6 @@
 
   <!-- 系統核心邏輯與資料庫 -->
   <script>
-
     // 預設資料庫：母機 (Assets) 與 子配件 (Components)
     const initialAssetDatabase = [
       {
@@ -495,7 +494,7 @@
         category: "全測站儀",
         isParent: true,
         children: ["BAT-TS01-A", "BAT-TS01-B", "TRIPOD-01"],
-        desc: "2秒測角精度，雙軸傾斜補償，支援無稜鏡測距500m。實習主力全站儀。/ Độ chính xác 2秒, bù nghiêng 2 trục, đo không gương 500m.",
+        desc: "2秒測角精度，雙軸傾斜補償，支援無稜鏡測距500m。實習主力全站儀。/ Độ chính xác 2 giây, bù nghiêng 2 trục, đo không gương 500m.",
         status: "AVAILABLE",
         currentBorrower: null,
         history: [
@@ -542,7 +541,6 @@
           { date: "2026-02-20", note: "韌體更新完成，IMU與指南針校驗正常。/ Cập nhật firmware, cân chỉnh IMU tốt." }
         ]
       },
-      // 子配件
       {
         code: "BAT-TS01-A",
         name: "Topcon BT-52QA 電池 (Pin máy toàn đạc)",
@@ -589,7 +587,7 @@
         category: "腳架與標尺",
         isParent: false,
         parentCode: "TS-01",
-        desc: "5/8吋螺紋，快扣與蝴蝶旋鈕鎖緊正常。/ Ốc nối 5/8吋, khóa gạt chắc chắn.",
+        desc: "5/8吋螺紋，快扣與蝴蝶旋鈕鎖緊正常。/ Ốc nối 5/8 inch, khóa gạt chắc chắn.",
         status: "AVAILABLE",
         history: [{ date: "2025-09-01", note: "踏板穩固。/ Khóa chắc chắn." }]
       },
@@ -633,12 +631,12 @@
     let inspectingCode = null;
 
     function getAssets() {
-      const data = localStorage.getItem('survey_prod_assets_v7');
-      if (!data) {
-        localStorage.setItem('survey_prod_assets_v7', JSON.stringify(initialAssetDatabase));
+      try {
+        const data = localStorage.getItem('survey_prod_assets_v7');
+        return data ? JSON.parse(data) : initialAssetDatabase;
+      } catch (e) {
         return initialAssetDatabase;
       }
-      return JSON.parse(data);
     }
 
     function saveAssets(list) {
@@ -647,12 +645,12 @@
     }
 
     function getIssues() {
-      const data = localStorage.getItem('survey_prod_issues_v7');
-      if (!data) {
-        localStorage.setItem('survey_prod_issues_v7', JSON.stringify(initialIssuesData));
+      try {
+        const data = localStorage.getItem('survey_prod_issues_v7');
+        return data ? JSON.parse(data) : initialIssuesData;
+      } catch (e) {
         return initialIssuesData;
       }
-      return JSON.parse(data);
     }
 
     function saveIssues(list) {
@@ -661,14 +659,16 @@
     }
 
     function loadCachedIdentity() {
-      const cached = localStorage.getItem('survey_student_cached_id_v7');
-      if (cached) {
-        const id = JSON.parse(cached);
-        document.getElementById('borrow-class').value = id.class || '越南專班';
-        document.getElementById('borrow-group').value = id.group || '';
-        document.getElementById('borrow-name').value = id.name || '';
-        document.getElementById('borrow-id').value = id.studentId || '';
-      }
+      try {
+        const cached = localStorage.getItem('survey_student_cached_id_v7');
+        if (cached) {
+          const id = JSON.parse(cached);
+          document.getElementById('borrow-class').value = id.class || '越南專班';
+          document.getElementById('borrow-group').value = id.group || '';
+          document.getElementById('borrow-name').value = id.name || '';
+          document.getElementById('borrow-id').value = id.studentId || '';
+        }
+      } catch (e) {}
     }
 
     function saveCachedIdentity() {
@@ -681,7 +681,6 @@
       localStorage.setItem('survey_student_cached_id_v7', JSON.stringify(id));
     }
 
-    // ==================== 掃碼與借用籃邏輯 ====================
     function startContinuousScan() {
       document.getElementById('camera-box').classList.remove('hidden');
       if (!html5QrScanner) {
@@ -693,8 +692,7 @@
         (decodedText) => { handleIncomingAssetCode(decodedText); },
         (err) => {}
       ).catch(err => {
-        alert("無法開啟鏡頭！請確認相機權限或使用「手動快選」。
-Không mở được camera, vui lòng kiểm tra quyền truy cập.");
+        alert("無法開啟鏡頭！請確認相機權限或使用「手動快選」。\nKhông mở được camera, vui lòng kiểm tra quyền truy cập.");
         document.getElementById('camera-box').classList.add('hidden');
       });
     }
@@ -715,14 +713,13 @@ Không mở được camera, vui lòng kiểm tra quyền truy cập.");
       const assets = getAssets();
       const item = assets.find(x => x.code === code);
       if (!item) {
-        alert(`掃描到的編號【${code}】尚未建檔！
-Mã này chưa có trong cơ sở dữ liệu!`);
+        alert("掃描到的編號【" + code + "】尚未建檔！\nMã này chưa có trong cơ sở dữ liệu!");
         return;
       }
 
       if (item.status === 'BORROWED') {
-        alert(`【注意】儀器 ${item.code} 目前正被「${item.currentBorrower.class} ${item.currentBorrower.group}」借用中！
-Thiết bị đang có nhóm khác mượn!`);
+        const who = item.currentBorrower ? (item.currentBorrower.class + ' ' + item.currentBorrower.group) : '';
+        alert("【注意】儀器 " + item.code + " 目前正被「" + who + "」借用中！\nThiết bị đang có nhóm khác mượn!");
         return;
       }
 
@@ -749,7 +746,7 @@ Thiết bị đang có nhóm khác mượn!`);
       const badge = document.getElementById('cart-item-count');
       const submitBtn = document.getElementById('btn-submit-cart');
 
-      badge.innerText = `${studentCart.length} 件 / món`;
+      badge.innerText = studentCart.length + " 件 / món";
       container.innerHTML = '';
 
       if (studentCart.length === 0) {
@@ -769,28 +766,27 @@ Thiết bị đang có nhóm khác mượn!`);
           : '<span class="text-[10px] px-2 py-0.5 rounded font-bold bg-amber-100 text-amber-800 border border-amber-300 animate-pulse"><i class="fa-solid fa-hand-pointer mr-1"></i>點我開箱點驗 / Bấm để kiểm tra</span>';
 
         let issueTag = item.issueText 
-          ? `<div class="text-[11px] text-rose-700 bg-rose-50 border border-rose-200 p-1.5 rounded-lg mt-1 truncate"><strong>回報問題 (Sự cố):</strong> ${item.issueText}</div>`
+          ? '<div class="text-[11px] text-rose-700 bg-rose-50 border border-rose-200 p-1.5 rounded-lg mt-1 truncate"><strong>回報問題 (Sự cố):</strong> ' + item.issueText + '</div>'
           : '';
 
         let childrenTag = (item.isParent && item.children && item.children.length > 0)
-          ? `<div class="text-[10px] text-indigo-700 mt-1 flex flex-wrap gap-1 items-center">
-              <i class="fa-solid fa-link mr-1"></i>連帶配件 (Phụ kiện đi kèm):
-              ${item.children.map(c => `<span class="bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-200 font-mono">${c}</span>`).join('')}
-            </div>`
+          ? '<div class="text-[10px] text-indigo-700 mt-1 flex flex-wrap gap-1 items-center"><i class="fa-solid fa-link mr-1"></i>連帶配件 (Phụ kiện đi kèm): ' +
+              item.children.map(c => '<span class="bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-200 font-mono">' + c + '</span>').join('') +
+            '</div>'
           : '';
 
         container.innerHTML += `
-          <div class="bg-white p-3.5 rounded-2xl border-2 ${item.issueText ? 'border-rose-400' : (item.inspected ? 'border-emerald-400' : 'border-slate-300')} shadow-sm flex justify-between items-center space-x-2">
-            <div onclick="openItemInspectModal('${item.code}')" class="flex-1 cursor-pointer">
+          <div class="bg-white p-3.5 rounded-2xl border-2 ` + (item.issueText ? 'border-rose-400' : (item.inspected ? 'border-emerald-400' : 'border-slate-300')) + ` shadow-sm flex justify-between items-center space-x-2">
+            <div onclick="openItemInspectModal('` + item.code + `')" class="flex-1 cursor-pointer">
               <div class="flex items-center space-x-2">
-                <span class="font-black text-slate-900 text-sm font-mono">${item.code}</span>
-                <span class="text-xs text-slate-800 font-bold">${item.name}</span>
+                <span class="font-black text-slate-900 text-sm font-mono">` + item.code + `</span>
+                <span class="text-xs text-slate-800 font-bold">` + item.name + `</span>
               </div>
-              <div class="mt-1">${inspectBadge}</div>
-              ${childrenTag}
-              ${issueTag}
+              <div class="mt-1">` + inspectBadge + `</div>
+              ` + childrenTag + `
+              ` + issueTag + `
             </div>
-            <button onclick="removeFromStudentCart(${idx})" class="text-slate-400 hover:text-rose-600 p-2 text-sm" title="移出清單 / Xóa">
+            <button onclick="removeFromStudentCart(` + idx + `)" class="text-slate-400 hover:text-rose-600 p-2 text-sm" title="移出清單 / Xóa">
               <i class="fa-solid fa-trash-can"></i>
             </button>
           </div>
@@ -822,7 +818,7 @@ Thiết bị đang có nhóm khác mượn!`);
         item.history.slice().reverse().forEach(h => {
           hl.innerHTML += `
             <div class="bg-slate-100 p-1.5 rounded-lg text-[11px] text-slate-700">
-              <span class="text-amber-700 font-bold mr-1">${h.date}:</span>${h.note}
+              <span class="text-amber-700 font-bold mr-1">` + h.date + `:</span>` + h.note + `
             </div>
           `;
         });
@@ -873,14 +869,13 @@ Thiết bị đang có nhóm khác mượn!`);
       const id = document.getElementById('borrow-id').value.trim();
 
       if (!grp || !name || !id) {
-        alert("請在步驟 1 填寫組別、姓名與學號！
-Vui lòng điền tên nhóm, họ tên và mã SV!");
+        alert("請在步驟 1 填寫組別、姓名與學號！\nVui lòng điền tên nhóm, họ tên và mã SV!");
         return;
       }
 
       saveCachedIdentity();
       const now = new Date();
-      const timeStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+      const timeStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') + ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
 
       const borrower = { class: cls, group: grp, name: name, id: id, time: timeStr };
       const assets = getAssets();
@@ -894,17 +889,17 @@ Vui lòng điền tên nhóm, họ tên và mã SV!");
 
           if (cartItem.issueText) {
             issues.push({
-              id: `ISSUE-${Date.now().toString().slice(-4)}`,
+              id: "ISSUE-" + Date.now().toString().slice(-4),
               deviceCode: target.code,
               date: timeStr,
-              reporter: `${cls} ${grp} (${name})`,
+              reporter: cls + " " + grp + " (" + name + ")",
               description: cartItem.issueText,
               status: "PENDING",
               resolutionNote: ""
             });
             target.history.push({
               date: timeStr,
-              note: `【學生借出時回報異常】由 ${cls} ${grp} 描述：${cartItem.issueText}`
+              note: "【學生借出時回報異常】由 " + cls + " " + grp + " 描述：" + cartItem.issueText
             });
           }
         }
@@ -919,21 +914,18 @@ Vui lòng điền tên nhóm, họ tên và mã SV!");
         issues: studentCart.filter(x => x.issueText).map(x => ({ code: x.code, text: x.issueText }))
       });
 
-      alert(`【借用成功 / MƯỢN THÀNH CÔNG】
-已成功借用 ${studentCart.length} 件設備！
-Đã mượn thành công các thiết bị đã chọn.`);
+      alert("【借用成功 / MƯỢN THÀNH CÔNG】\n已成功借用 " + studentCart.length + " 件設備！\nĐã mượn thành công các thiết bị đã chọn.");
       studentCart = [];
       renderStudentCart();
     }
 
-    // ==================== 問題看板管理 ====================
     function renderIssuesBoard() {
       const issues = getIssues();
       const container = document.getElementById('issues-list-container');
       const countBadge = document.getElementById('issues-pending-badge');
 
       const pendingCount = issues.filter(i => i.status === 'PENDING').length;
-      countBadge.innerText = `${pendingCount} 筆待處理 / Đang chờ`;
+      countBadge.innerText = pendingCount + " 筆待處理 / Đang chờ";
       container.innerHTML = '';
 
       if (issues.length === 0) {
@@ -951,33 +943,33 @@ Vui lòng điền tên nhóm, họ tên và mã SV!");
           <div class="bg-slate-50 p-4 rounded-2xl border-2 border-slate-300 space-y-3">
             <div class="flex justify-between items-start">
               <div class="flex items-center space-x-2">
-                <span class="font-black text-slate-900 font-mono text-sm">${issue.deviceCode}</span>
-                <span class="text-xs text-slate-600 font-semibold">通報來源：${issue.reporter}</span>
-                <span class="text-[10px] text-slate-400 font-medium">${issue.date}</span>
+                <span class="font-black text-slate-900 font-mono text-sm">` + issue.deviceCode + `</span>
+                <span class="text-xs text-slate-600 font-semibold">通報來源：` + issue.reporter + `</span>
+                <span class="text-[10px] text-slate-400 font-medium">` + issue.date + `</span>
               </div>
-              ${badge}
+              ` + badge + `
             </div>
 
             <div class="bg-white p-3 rounded-xl border border-slate-200 text-xs">
               <p class="font-bold text-rose-700 mb-1"><i class="fa-solid fa-quote-left mr-1"></i>學生文字通報之問題 (Mô tả sự cố):</p>
-              <p class="text-slate-800 leading-relaxed font-medium">${issue.description}</p>
+              <p class="text-slate-800 leading-relaxed font-medium">` + issue.description + `</p>
             </div>
 
-            ${issue.resolutionNote ? `<p class="text-[11px] text-emerald-700 bg-emerald-50 p-2 rounded-lg border border-emerald-200 font-semibold"><strong>處置紀錄 (Xử lý):</strong> ${issue.resolutionNote}</p>` : ''}
+            ` + (issue.resolutionNote ? '<p class="text-[11px] text-emerald-700 bg-emerald-50 p-2 rounded-lg border border-emerald-200 font-semibold"><strong>處置紀錄 (Xử lý):</strong> ' + issue.resolutionNote + '</p>' : '') + `
 
-            ${issue.status === 'PENDING' ? `
+            ` + (issue.status === 'PENDING' ? `
               <div class="flex flex-wrap gap-2 pt-1 border-t border-slate-200">
-                <button onclick="handleIssueAction('${issue.id}', 'SWAPPED')" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow">
+                <button onclick="handleIssueAction('` + issue.id + `', 'SWAPPED')" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow">
                   <i class="fa-solid fa-arrows-rotate mr-1"></i>現場換一台/換電 (Đổi máy khác)
                 </button>
-                <button onclick="handleIssueAction('${issue.id}', 'TO_REPAIR')" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow">
+                <button onclick="handleIssueAction('` + issue.id + `', 'TO_REPAIR')" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow">
                   <i class="fa-solid fa-wrench mr-1"></i>安排廠商送修 (Gửi sửa chữa)
                 </button>
-                <button onclick="handleIssueAction('${issue.id}', 'RESOLVED')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow">
+                <button onclick="handleIssueAction('` + issue.id + `', 'RESOLVED')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow">
                   <i class="fa-solid fa-check mr-1"></i>調校正常結案 (Đã chỉnh xong)
                 </button>
               </div>
-            ` : ''}
+            ` : '') + `
           </div>
         `;
       });
@@ -992,37 +984,35 @@ Vui lòng điền tên nhóm, họ tên và mã SV!");
       const target = assets.find(x => x.code === issue.deviceCode);
 
       const now = new Date();
-      const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+      const dateStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
 
       if (action === 'SWAPPED') {
         const note = prompt("請輸入換機或更換電池說明 (Ghi chú đổi máy):", "已現場更換備用電池/調撥另一台儀器 / Đã đổi pin hoặc máy khác");
         if (!note) return;
         issue.status = "SWAPPED";
-        issue.resolutionNote = `[${dateStr}] ${note}`;
-        if (target) target.history.push({ date: dateStr, note: `【現場處置】${note}` });
+        issue.resolutionNote = "[" + dateStr + "] " + note;
+        if (target) target.history.push({ date: dateStr, note: "【現場處置】" + note });
       } else if (action === 'TO_REPAIR') {
         const vendor = prompt("請輸入聯絡送修廠商或備註 (Đơn vị sửa chữa):", "巨曜儀器公司");
         if (!vendor) return;
         issue.status = "TO_REPAIR";
-        issue.resolutionNote = `[${dateStr}] 已排定聯絡 ${vendor} 送修檢測。`;
+        issue.resolutionNote = "[" + dateStr + "] 已排定聯絡 " + vendor + " 送修檢測。";
         if (target) {
           target.status = "MAINTENANCE";
-          target.history.push({ date: dateStr, note: `【排定送修】由 ${vendor} 檢修。` });
+          target.history.push({ date: dateStr, note: "【排定送修】由 " + vendor + " 檢修。" });
         }
       } else if (action === 'RESOLVED') {
         issue.status = "RESOLVED";
-        issue.resolutionNote = `[${dateStr}] 老師/助教現場檢視調校正常，排解結案。`;
-        if (target) target.history.push({ date: dateStr, note: `【問題排解】現場調校正常。` });
+        issue.resolutionNote = "[" + dateStr + "] 老師/助教現場檢視調校正常，排解結案。";
+        if (target) target.history.push({ date: dateStr, note: "【問題排解】現場調校正常。" });
       }
 
       saveIssues(issues);
       saveAssets(assets);
       renderIssuesBoard();
-      alert("已更新處理紀錄！
-Đã cập nhật trạng thái xử lý.");
+      alert("已更新處理紀錄！\nĐã cập nhật trạng thái xử lý.");
     }
 
-    // ==================== 後台管理表格 ====================
     function renderAdminTable() {
       const assets = getAssets();
       const parents = assets.filter(a => a.isParent !== false);
@@ -1041,31 +1031,31 @@ Vui lòng điền tên nhóm, họ tên và mã SV!");
         if (a.status === 'MAINTENANCE') badge = '<span class="px-2 py-0.5 rounded font-bold text-[10px] badge-repair">故障待修 (Đang hỏng)</span>';
 
         const borrowerText = a.currentBorrower 
-          ? `<strong class="text-slate-900">${a.currentBorrower.class} ${a.currentBorrower.group}</strong> (${a.currentBorrower.name})` 
+          ? '<strong class="text-slate-900">' + a.currentBorrower.class + ' ' + a.currentBorrower.group + '</strong> (' + a.currentBorrower.name + ')'
           : '<span class="text-slate-400">-</span>';
 
         let childrenTags = '';
         if (a.isParent && a.children && a.children.length > 0) {
-          childrenTags = a.children.map(c => `<span class="px-1.5 py-0.5 rounded text-[10px] badge-child font-mono mr-1 inline-block mb-1">${c}</span>`).join('');
+          childrenTags = a.children.map(c => '<span class="px-1.5 py-0.5 rounded text-[10px] badge-child font-mono mr-1 inline-block mb-1">' + c + '</span>').join('');
         } else if (!a.isParent) {
-          childrenTags = `<span class="text-[10px] text-slate-500">掛載於 (Thuộc máy): <strong class="text-indigo-700">${a.parentCode || '備用庫'}</strong></span>`;
+          childrenTags = '<span class="text-[10px] text-slate-500">掛載於 (Thuộc máy): <strong class="text-indigo-700">' + (a.parentCode || '備用庫') + '</strong></span>';
         } else {
           childrenTags = '<span class="text-slate-400">-</span>';
         }
 
         tbody.innerHTML += `
           <tr class="hover:bg-slate-50">
-            <td class="p-3 font-black text-slate-900 font-mono">${a.code}</td>
+            <td class="p-3 font-black text-slate-900 font-mono">` + a.code + `</td>
             <td class="p-3">
-              <div class="font-bold text-slate-900">${a.name}</div>
+              <div class="font-bold text-slate-900">` + a.name + `</div>
               <span class="text-[10px] text-indigo-700 font-semibold">${a.category}</span>
             </td>
             <td class="p-3 max-w-xs">${childrenTags}</td>
             <td class="p-3">${badge}</td>
             <td class="p-3">${borrowerText}</td>
             <td class="p-3 text-right space-x-1">
-              ${a.status === 'BORROWED' ? `<button onclick="adminReturnItem('${a.code}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold">驗收歸位 (Trả máy)</button>` : ''}
-              <button onclick="openQrPrintModal('${a.code}')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold" title="列印 QR 標籤">
+              ` + (a.status === 'BORROWED' ? '<button onclick="adminReturnItem(\'' + a.code + '\')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold">驗收歸位 (Trả máy)</button>' : '') + `
+              <button onclick="openQrPrintModal('` + a.code + `')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold" title="列印 QR 標籤">
                 <i class="fa-solid fa-qrcode mr-1"></i>In QR
               </button>
             </td>
@@ -1082,8 +1072,7 @@ Vui lòng điền tên nhóm, họ tên và mã SV!");
         item.currentBorrower = null;
         saveAssets(assets);
         dispatchToGoogleSheets("RETURN", { deviceCode: code });
-        alert(`儀器 ${item.code} 已完好歸位在庫！
-Thiết bị ${item.code} đã nhập kho an toàn.`);
+        alert("儀器 " + item.code + " 已完好歸位在庫！\nThiết bị " + item.code + " đã nhập kho an toàn.");
       }
     }
 
@@ -1118,7 +1107,7 @@ Thiết bị ${item.code} đã nhập kho an toàn.`);
       select.innerHTML = '<option value="庫存備用 (無固定主機)">庫存備用 / Kho dự phòng</option>';
       const assets = getAssets();
       assets.filter(a => a.isParent !== false).forEach(p => {
-        select.innerHTML += `<option value="${p.code}">${p.code} (${p.name})</option>`;
+        select.innerHTML += `<option value="` + p.code + `">` + p.code + ` (` + p.name + `)</option>`;
       });
 
       toggleParentBindingField();
@@ -1148,13 +1137,12 @@ Thiết bị ${item.code} đã nhập kho an toàn.`);
 
       const assets = getAssets();
       if (assets.some(x => x.code === code)) {
-        alert("此 Asset ID 已存在！請更換代號。
-Mã thiết bị đã tồn tại!");
+        alert("此 Asset ID 已存在！請更換代號。\nMã thiết bị đã tồn tại!");
         return;
       }
 
       const now = new Date();
-      const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+      const dateStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
 
       const newAsset = {
         code: code,
@@ -1182,8 +1170,7 @@ Mã thiết bị đã tồn tại!");
       assets.push(newAsset);
       saveAssets(assets);
       closeModal('modal-create-asset');
-      alert(`【建檔成功 / THÀNH CÔNG】
-設備 ${code} (${name}) 已建立！`);
+      alert("【建檔成功 / THÀNH CÔNG】\n設備 " + code + " (" + name + ") 已建立！");
     }
 
     function openQuickPickModal() {
@@ -1195,14 +1182,14 @@ Mã thiết bị đã tồn tại!");
         container.innerHTML += `
           <div class="flex justify-between items-center p-2.5 bg-slate-50 rounded-xl border border-slate-200">
             <div>
-              <span class="font-black text-slate-900 font-mono">${a.code}</span>
-              <span class="text-xs text-slate-800 font-bold ml-1">${a.name}</span>
+              <span class="font-black text-slate-900 font-mono">` + a.code + `</span>
+              <span class="text-xs text-slate-800 font-bold ml-1">` + a.name + `</span>
               <span class="text-[10px] text-indigo-700 block">${a.category}</span>
             </div>
-            ${a.status === 'AVAILABLE' 
-              ? `<button onclick="handleIncomingAssetCode('${a.code}'); closeModal('modal-quick-pick')" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold">+ 加入 (Thêm)</button>`
-              : `<span class="text-[10px] text-slate-400 font-bold">${a.status === 'BORROWED' ? '借出中 Đang mượn' : '待修 Hỏng'}</span>`
-            }
+            ` + (a.status === 'AVAILABLE' 
+              ? `<button onclick="handleIncomingAssetCode('` + a.code + `'); closeModal('modal-quick-pick')" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold">+ 加入 (Thêm)</button>`
+              : `<span class="text-[10px] text-slate-400 font-bold">` + (a.status === 'BORROWED' ? '借出中 Đang mượn' : '待修 Hỏng') + `</span>`
+            ) + `
           </div>
         `;
       });
@@ -1210,7 +1197,6 @@ Mã thiết bị đã tồn tại!");
       document.getElementById('modal-quick-pick').classList.remove('hidden');
     }
 
-    // 權限切換
     function openRoleAuthModal() {
       document.getElementById('input-role-pwd').value = '';
       document.getElementById('modal-role-auth').classList.remove('hidden');
@@ -1243,14 +1229,12 @@ Mã thiết bị đã tồn tại!");
 
     function requireRoleAccess(target) {
       if (target === 'issues' && currentRole === 'STUDENT') {
-        alert("「問題看板」為助教與老師專用管理介面，請先輸入密碼驗證！
-Dành cho Trợ giảng và Giáo viên!");
+        alert("「問題看板」為助教與老師專用管理介面，請先輸入密碼驗證！\nDành cho Trợ giảng và Giáo viên!");
         openRoleAuthModal();
         return;
       }
       if (target === 'admin' && currentRole !== 'ADMIN') {
-        alert("「管理後台」僅限 指導老師 進入，請先輸入老師密碼！
-Chỉ dành riêng cho Giáo viên!");
+        alert("「管理後台」僅限 指導老師 進入，請先輸入老師密碼！\nChỉ dành riêng cho Giáo viên!");
         openRoleAuthModal();
         return;
       }
@@ -1280,7 +1264,6 @@ Chỉ dành riêng cho Giáo viên!");
       }
     }
 
-    // Google Sheets Webhook 通訊
     function openWebhookConfigModal() {
       const url = localStorage.getItem('survey_prod_gas_url_v7') || '';
       document.getElementById('cfg-gas-url').value = url;
@@ -1292,8 +1275,7 @@ Chỉ dành riêng cho Giáo viên!");
       localStorage.setItem('survey_prod_gas_url_v7', url);
       closeModal('modal-webhook-config');
       checkSyncStatus();
-      alert("Webhook API 設定已儲存！
-Đã lưu cài đặt kết nối.");
+      alert("Webhook API 設定已儲存！\nĐã lưu cài đặt kết nối.");
     }
 
     function checkSyncStatus() {
@@ -1334,7 +1316,7 @@ Chỉ dành riêng cho Giáo viên!");
       renderAdminTable();
       checkSyncStatus();
     };
-  
+
   </script>
 </body>
 </html>
