@@ -58,15 +58,15 @@
     </div>
   </header>
 
-  <!-- 雲端同步狀態指示條 -->
+  <!-- 雲端同步狀態指示條 (隱蔽管理按鈕，不直接向學生暴露 Webhook 設定介面) -->
   <div id="sync-status-bar" class="bg-indigo-950 text-indigo-200 border-b border-indigo-900 px-4 py-1.5 text-xs flex justify-between items-center max-w-6xl mx-auto w-full">
     <div class="flex items-center space-x-2">
       <span id="sync-dot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
       <span id="sync-text">雲端試算表同步已啟用 (Google Sheets 連線正常)</span>
     </div>
-    <button onclick="openWebhookConfigModal()" class="text-indigo-300 hover:text-white underline text-[11px]">
-      設定 Webhook 網址
-    </button>
+    <div class="flex items-center space-x-2">
+      <span class="text-indigo-400 text-[11px]">系統連線已鎖定</span>
+    </div>
   </div>
 
   <!-- 主內容區 -->
@@ -81,12 +81,8 @@
             <span class="w-6 h-6 rounded-full bg-indigo-600 text-xs font-black flex items-center justify-center text-white">1</span>
             <div>
               <h3 class="font-bold text-slate-900 text-sm">輸入借用組別資訊</h3>
-              <p class="text-[10px] text-slate-500">本機自動記憶，整學期免再重複打字</p>
             </div>
           </div>
-          <span class="text-[11px] text-emerald-700 bg-emerald-100 font-bold px-2 py-0.5 rounded-full">
-            <i class="fa-solid fa-mobile-screen-button mr-1"></i>裝置已鎖定記憶
-          </span>
         </div>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
           <div>
@@ -241,12 +237,15 @@
             <h3 class="font-bold text-slate-900 text-sm">設備資產總表 (含舊式經緯儀、水準儀、無人機系統)</h3>
             <p class="text-xs text-slate-500">點擊項目可產生 QR Code 標籤貼紙、掛載配件管理；支援器材安全防呆刪除</p>
           </div>
-          <div class="flex space-x-2 w-full sm:w-auto">
+          <div class="flex flex-wrap gap-2 w-full sm:w-auto">
             <button onclick="openCreateAssetModal('PARENT')" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow">
               <i class="fa-solid fa-plus mr-1"></i>新增主機設備
             </button>
             <button onclick="openCreateAssetModal('CHILD')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold shadow">
               <i class="fa-solid fa-puzzle-piece mr-1"></i>新增子配件/電池
+            </button>
+            <button onclick="openWebhookConfigModal()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold border border-slate-300">
+              <i class="fa-solid fa-cloud-arrow-up mr-1 text-indigo-600"></i>Webhook 設定
             </button>
           </div>
         </div>
@@ -306,7 +305,7 @@
         <p class="font-bold text-rose-700 flex items-center">
           <i class="fa-solid fa-pen-to-square mr-1.5"></i>若發現新問題，請在此文字描述 (免拍照，清楚寫出問題現象)：
         </p>
-        <textarea id="inspect-user-issue-text" rows="3" placeholder="請以文字詳細描述異常現象（例如：水平微動螺旋鎖緊後仍會打滑、電池開機後約10分鐘即亮紅燈、水準儀長氣泡管有些微偏...），以便老師掌握狀況並轉述廠商維修！" class="w-full bg-slate-50 border-2 border-slate-300 rounded-2xl p-3 text-slate-800 text-xs focus:border-indigo-600 focus:bg-white"></textarea>
+        <textarea id="inspect-user-issue-text" rows="3" placeholder="請以文字詳細描述異常現象（例如：水平微動螺旋鎖緊後仍會打滑、電池開機後約10分鐘即亮紅燈、水準儀長氣泡管有些微偏...），以便掌握狀況並轉述廠商維修！" class="w-full bg-slate-50 border-2 border-slate-300 rounded-2xl p-3 text-slate-800 text-xs focus:border-indigo-600 focus:bg-white"></textarea>
       </div>
 
       <div class="flex space-x-2 pt-2">
@@ -343,7 +342,7 @@
     </div>
   </div>
 
-  <!-- MODAL 3: 權限密碼 -->
+  <!-- MODAL 3: 權限密碼 (已清理敏感密碼提示，並統一稱謂為老師) -->
   <div id="modal-role-auth" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-xs border-2 border-slate-300">
       <div class="flex justify-between items-center border-b border-slate-200 pb-2">
@@ -354,24 +353,24 @@
         <button onclick="closeModal('modal-role-auth')" class="text-slate-400 hover:text-slate-800 text-lg">&times;</button>
       </div>
       
-      <div class="space-y-1.5 text-slate-600">
-        <div class="p-2 bg-slate-50 border border-slate-200 rounded-xl flex justify-between items-center">
-          <span>① 學生模式 (Student)</span>
-          <span class="font-mono font-bold text-slate-400">免密碼 / 1234</span>
+      <div class="space-y-2 text-slate-600">
+        <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center space-x-2">
+          <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+          <span class="font-medium">學生模式 (Student)</span>
         </div>
-        <div class="p-2 bg-slate-50 border border-slate-200 rounded-xl flex justify-between items-center">
-          <span>② 實習助教 (TA)</span>
-          <span class="font-mono font-bold text-emerald-600">5678</span>
+        <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center space-x-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          <span class="font-medium">實習助教 (TA)</span>
         </div>
-        <div class="p-2 bg-slate-50 border border-slate-200 rounded-xl flex justify-between items-center">
-          <span>③ 梁老師 (Admin 最高權限)</span>
-          <span class="font-mono font-bold text-indigo-600">9999</span>
+        <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center space-x-2">
+          <span class="w-2 h-2 rounded-full bg-indigo-600"></span>
+          <span class="font-medium">老師 (Admin 最高權限)</span>
         </div>
       </div>
 
       <div>
         <label class="block text-slate-700 font-bold mb-1">輸入身分通關密碼：</label>
-        <input type="password" id="input-role-pwd" placeholder="請輸入密碼..." class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2.5 text-slate-900 font-mono text-sm focus:border-indigo-600 notranslate" translate="no">
+        <input type="password" id="input-role-pwd" placeholder="請輸入管理密碼..." class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2.5 text-slate-900 font-mono text-sm focus:border-indigo-600 notranslate" translate="no">
       </div>
 
       <div class="flex space-x-2 pt-1">
@@ -442,25 +441,25 @@
     </div>
   </div>
 
-  <!-- MODAL 5: Webhook 設定 -->
+  <!-- MODAL 5: Webhook 設定 (僅供管理後台內部調校) -->
   <div id="modal-webhook-config" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-3 text-xs border-2 border-slate-300">
       <div class="flex justify-between items-center border-b border-slate-200 pb-2">
         <h3 class="font-bold text-slate-900 text-sm flex items-center space-x-1.5">
           <i class="fa-solid fa-cloud-arrow-up text-indigo-600"></i>
-          <span>Google 試算表 Webhook 連線設定</span>
+          <span>雲端資料庫連線維護 (Admin 專用)</span>
         </h3>
         <button onclick="closeModal('modal-webhook-config')" class="text-slate-400 hover:text-slate-800 text-lg">&times;</button>
       </div>
       <p class="text-slate-600 leading-relaxed">
-        請貼上 Google Apps Script 部署之 Web App 網址：
+        系統目前已預載指定之試算表 Webhook 網址，若需更換後端部屬連結請於此修改：
       </p>
       <div>
         <label class="block text-slate-700 font-bold mb-1">Web App Exec URL：</label>
         <input type="url" id="cfg-gas-url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2.5 text-slate-900 font-mono notranslate" translate="no">
       </div>
       <div class="flex space-x-2 pt-2">
-        <button onclick="saveWebhookConfig()" class="w-full py-2.5 bg-indigo-600 text-white font-bold rounded-xl shadow">儲存並測試連線</button>
+        <button onclick="saveWebhookConfig()" class="w-full py-2.5 bg-indigo-600 text-white font-bold rounded-xl shadow">儲存設定</button>
       </div>
     </div>
   </div>
@@ -641,21 +640,21 @@
     let studentCart = [];
     let html5QrScanner = null;
     let inspectingCode = null;
-    let currentIssuesFilter = "PENDING"; // PENDING | ARCHIVED | ALL
+    let currentIssuesFilter = "PENDING";
 
     const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbwyGLYIzJK-nFEoUNMB5fiXUwG77BWOQWq_e4lqpCzi24X5Pyfnl5MwtRU-x3729rUj/exec";
 
     function getGasUrl() {
-      return localStorage.getItem('survey_prod_gas_url_v10') || DEFAULT_GAS_URL;
+      return localStorage.getItem('survey_prod_gas_url_v11') || DEFAULT_GAS_URL;
     }
 
     function setGasUrl(url) {
-      localStorage.setItem('survey_prod_gas_url_v10', url);
+      localStorage.setItem('survey_prod_gas_url_v11', url);
     }
 
     function getAssets() {
       try {
-        const data = localStorage.getItem('survey_prod_assets_v10');
+        const data = localStorage.getItem('survey_prod_assets_v11');
         return data ? JSON.parse(data) : initialAssetDatabase;
       } catch (e) {
         return initialAssetDatabase;
@@ -663,13 +662,13 @@
     }
 
     function saveAssets(list) {
-      localStorage.setItem('survey_prod_assets_v10', JSON.stringify(list));
+      localStorage.setItem('survey_prod_assets_v11', JSON.stringify(list));
       renderAdminTable();
     }
 
     function getIssues() {
       try {
-        const data = localStorage.getItem('survey_prod_issues_v10');
+        const data = localStorage.getItem('survey_prod_issues_v11');
         return data ? JSON.parse(data) : initialIssuesData;
       } catch (e) {
         return initialIssuesData;
@@ -677,13 +676,13 @@
     }
 
     function saveIssues(list) {
-      localStorage.setItem('survey_prod_issues_v10', JSON.stringify(list));
+      localStorage.setItem('survey_prod_issues_v11', JSON.stringify(list));
       renderIssuesBoard();
     }
 
     function loadCachedIdentity() {
       try {
-        const cached = localStorage.getItem('survey_student_cached_id_v10');
+        const cached = localStorage.getItem('survey_student_cached_id_v11');
         if (cached) {
           const id = JSON.parse(cached);
           document.getElementById('borrow-class').value = id.class || '土木一甲';
@@ -701,7 +700,7 @@
         name: document.getElementById('borrow-name').value,
         studentId: document.getElementById('borrow-id').value
       };
-      localStorage.setItem('survey_student_cached_id_v10', JSON.stringify(id));
+      localStorage.setItem('survey_student_cached_id_v11', JSON.stringify(id));
     }
 
     function startContinuousScan() {
@@ -937,7 +936,8 @@
         issues: studentCart.filter(x => x.issueText).map(x => ({ code: x.code, text: x.issueText }))
       });
 
-      alert("【借用成功】已成功借用 " + studentCart.length + " 件設備！\n若您有描述問題，老師與助教已同步在後台接收到您的文字描述紀錄。");
+      alert("【借用成功】已成功借用 " + studentCart.length + " 件設備！
+若您有描述問題，後台已同步接收到您的文字描述紀錄。");
       studentCart = [];
       renderStudentCart();
     }
@@ -1055,7 +1055,7 @@
         }
       } else if (action === 'RESOLVED') {
         issue.status = "RESOLVED";
-        issue.resolutionNote = "[" + dateStr + "] 老師/助教現場檢視調校正常，排解結案。";
+        issue.resolutionNote = "[" + dateStr + "] 現場檢視調校正常，排解結案。";
         if (target) target.history.push({ date: dateStr, note: "【問題排解】現場調校正常。" });
       }
 
@@ -1145,22 +1145,21 @@
 
       const target = assets[targetIndex];
 
-      // 防呆 1：出借中禁止刪除
       if (target.status === 'BORROWED') {
         const borrowerInfo = target.currentBorrower ? (target.currentBorrower.class + ' ' + target.currentBorrower.group) : '學生';
         alert("【防呆警示】設備【" + code + "】目前正由「" + borrowerInfo + "」出借使用中，嚴禁刪除！請先執行「驗收歸位」後再操作。");
         return;
       }
 
-      // 防呆 2：二次確認
       let confirmMsg = "確定要刪除設備【" + code + "】(" + target.name + ") 嗎？此操作無法復原。";
       if (target.isParent && target.children && target.children.length > 0) {
-        confirmMsg += "\n\n【注意】此為主機設備，掛載之子配件（" + target.children.join(", ") + "）將會自動解綁並轉移至「備用配件庫存」，不會被誤刪。";
+        confirmMsg += "
+
+【注意】此為主機設備，掛載之子配件（" + target.children.join(", ") + "）將會自動解綁並轉移至「備用配件庫存」，不會被誤刪。";
       }
 
       if (!confirm(confirmMsg)) return;
 
-      // 若為主機，解綁旗下子配件
       if (target.isParent && target.children && target.children.length > 0) {
         assets.forEach(a => {
           if (a.parentCode === code) {
@@ -1174,7 +1173,6 @@
         });
       }
 
-      // 若為子配件，需從母設備清單移除
       if (!target.isParent && target.parentCode) {
         const parent = assets.find(p => p.code === target.parentCode);
         if (parent && parent.children) {
@@ -1182,7 +1180,6 @@
         }
       }
 
-      // 移除目標
       assets.splice(targetIndex, 1);
       saveAssets(assets);
       alert("設備【" + code + "】已成功刪除！");
@@ -1333,8 +1330,8 @@
       if (pwd === "9999") {
         currentRole = "ADMIN";
         badge.className = "text-[10px] px-2 py-0.5 rounded-full font-bold bg-indigo-100 text-indigo-900 border border-indigo-300";
-        badge.innerText = "梁老師 (最高權限)";
-        alert("歡迎 梁老師！您已切換為最高管理權限。");
+        badge.innerText = "老師 (最高權限)";
+        alert("歡迎！您已切換為最高管理權限。");
         switchView('admin');
       } else if (pwd === "5678") {
         currentRole = "TA";
@@ -1398,7 +1395,7 @@
       setGasUrl(url);
       closeModal('modal-webhook-config');
       checkSyncStatus();
-      alert("Webhook API 設定已儲存！");
+      alert("Webhook 設定已儲存！");
     }
 
     function checkSyncStatus() {
@@ -1410,7 +1407,7 @@
         txt.innerText = "雲端試算表同步已啟用 (Google Sheets 連線正常)";
       } else {
         dot.className = "w-2 h-2 rounded-full bg-amber-400";
-        txt.innerText = "本地離線模式 (點右側按鈕設定 Google 試算表連線)";
+        txt.innerText = "本地離線模式 (Google 試算表連線未啟用)";
       }
     }
 
