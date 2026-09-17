@@ -373,6 +373,9 @@
             <p class="text-xs text-slate-500">可按「修改」更新規格或檢查項；新增時可一鍵帶入現有儀器資料節省打字時間</p>
           </div>
           <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+            <button onclick="fetchCloudData(true)" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow flex items-center space-x-1 transition active:scale-95">
+              <i class="fa-solid fa-arrows-rotate mr-1"></i>同步最新試算表
+            </button>
             <button onclick="openCreateAssetModal('PARENT')" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow">
               <i class="fa-solid fa-plus mr-1"></i>新增主機設備
             </button>
@@ -389,7 +392,6 @@
                 <th class="p-3">Asset ID</th>
                 <th class="p-3">設備名稱 / 類別</th>
                 <th class="p-3">掛載子配件</th>
-                <th class="p-3">開箱核對項目</th>
                 <th class="p-3">目前狀態</th>
                 <th class="p-3">借用組別</th>
                 <th class="p-3 text-right">管理操作</th>
@@ -1331,7 +1333,6 @@
               <span class="text-[10px] text-indigo-700 font-semibold">${a.category}</span>
             </td>
             <td class="p-3 max-w-xs">${childrenTags}</td>
-            <td class="p-3 max-w-xs">${checkTags}</td>
             <td class="p-3">${badge}</td>
             <td class="p-3">${borrowerText}</td>
             <td class="p-3 text-right space-x-1 whitespace-nowrap">
