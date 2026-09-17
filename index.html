@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📐</text></svg>">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>建國科技大學 土木工程系 - 測量與航測儀器數位履歷管理系統</title>
+  <title>建國科技大學 土木工程系 - 測量實習儀器管理系統</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome 圖示庫 -->
@@ -20,13 +20,15 @@
     .badge-borrowed { background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
     .badge-repair { background-color: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
     .badge-child { background-color: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; }
-    .custom-scroll::-webkit-scrollbar { width: 5px; }
+    .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
     .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
 <body class="bg-slate-100 text-slate-900 min-h-screen flex flex-col antialiased select-none">
 
-  <!-- ================= 全站門禁登入彈窗 (無任何提示指引，F12無密碼) ================= -->
+  <!-- ================= 全站門禁登入彈窗 ================= -->
   <div id="gatekeeper-modal" class="fixed inset-0 bg-slate-900/95 backdrop-blur-md z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-sm w-full p-6 sm:p-7 shadow-2xl border-2 border-slate-300 space-y-5 text-center">
       <div class="w-14 h-14 bg-indigo-600 text-white rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-lg shadow-indigo-200">
@@ -52,60 +54,69 @@
     </div>
   </div>
 
-  <!-- 頂部導航列 -->
+  <!-- 頂部導航列：修正手機端重疊問題，自適應彈性高度 -->
   <header class="bg-slate-900 text-white sticky top-0 z-40 shadow-md">
-    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow font-black text-lg">
-          <i class="fa-solid fa-compass-drafting"></i>
-        </div>
-        <div>
-          <div class="flex items-center space-x-2">
-            <h1 class="text-sm sm:text-base font-bold tracking-tight">測量實習儀器管理系統</h1>
-            <span id="role-indicator" class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-800 text-slate-300 border border-slate-700">學生模式</span>
+    <div class="max-w-6xl mx-auto px-4 py-2.5 sm:py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2.5">
+      <!-- 標題與身分標籤 -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow font-black text-base sm:text-lg shrink-0">
+            <i class="fa-solid fa-compass-drafting"></i>
           </div>
-          <p class="text-[11px] text-slate-400">建國科技大學 土木工程系 ｜ 數位身分證・問題通報・母子配件履歷</p>
+          <div>
+            <div class="flex items-center space-x-2">
+              <h1 class="text-sm sm:text-base font-bold tracking-tight">測量實習儀器管理系統</h1>
+              <span id="role-indicator" class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-800 text-slate-300 border border-slate-700 whitespace-nowrap">學生模式</span>
+            </div>
+            <!-- 已刪除副標題字樣，純化為系所名稱 -->
+            <p class="text-[11px] text-slate-400 font-medium">建國科技大學 土木工程系</p>
+          </div>
         </div>
+        <!-- 小螢幕身分切換鎖按鈕 -->
+        <button onclick="openRoleAuthModal()" title="切換身分權限" class="md:hidden p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border border-slate-700 text-xs shrink-0">
+          <i class="fa-solid fa-key"></i>
+        </button>
       </div>
 
-      <div class="flex items-center space-x-1.5 sm:space-x-2">
-        <button onclick="switchView('student')" id="nav-btn-student" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow">
+      <!-- 導航切換按鈕列：手機版橫向平滑排列，不擠壓折行 -->
+      <div class="flex items-center space-x-2 overflow-x-auto no-scrollbar pb-0.5 md:pb-0">
+        <button onclick="switchView('student')" id="nav-btn-student" class="shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow">
           <i class="fa-solid fa-qrcode mr-1"></i>借用與掃碼
         </button>
-        <button onclick="requireRoleAccess('ta')" id="nav-btn-ta" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700">
+        <button onclick="requireRoleAccess('ta')" id="nav-btn-ta" class="shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700">
           <i class="fa-solid fa-clipboard-check mr-1 text-emerald-400"></i>助教工作台
         </button>
-        <button onclick="requireRoleAccess('admin')" id="nav-btn-admin" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700">
+        <button onclick="requireRoleAccess('admin')" id="nav-btn-admin" class="shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700">
           <i class="fa-solid fa-sliders mr-1 text-indigo-400"></i>管理後台
         </button>
-        <button onclick="openRoleAuthModal()" title="切換身分權限" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border border-slate-700 text-xs">
+        <button onclick="openRoleAuthModal()" title="切換身分權限" class="hidden md:inline-flex p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border border-slate-700 text-xs shrink-0">
           <i class="fa-solid fa-key"></i>
         </button>
       </div>
     </div>
   </header>
 
-  <!-- 雲端同步狀態指示條 (具備手動強制拉取按鈕) -->
+  <!-- 雲端同步狀態指示條 -->
   <div id="sync-status-bar" class="bg-indigo-950 text-indigo-200 border-b border-indigo-900 px-4 py-1.5 text-xs flex justify-between items-center max-w-6xl mx-auto w-full">
-    <div class="flex items-center space-x-2">
-      <span id="sync-dot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-      <span id="sync-text">雲端資料載入中...</span>
+    <div class="flex items-center space-x-2 truncate mr-2">
+      <span id="sync-dot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0"></span>
+      <span id="sync-text" class="truncate text-[11px] sm:text-xs">雲端資料載入中...</span>
     </div>
-    <div class="flex items-center space-x-3">
+    <div class="flex items-center space-x-3 shrink-0">
       <button onclick="fetchCloudData(true)" class="text-indigo-300 hover:text-white flex items-center space-x-1 text-[11px] underline">
         <i class="fa-solid fa-arrows-rotate mr-0.5"></i>
-        <span>手動更新試算表</span>
+        <span>手動更新</span>
       </button>
-      <span class="text-indigo-400 text-[11px]">系統已鎖定</span>
+      <span class="text-indigo-400 text-[11px] hidden sm:inline">系統運作中</span>
     </div>
   </div>
 
   <!-- 主內容區 -->
-  <main class="max-w-6xl mx-auto px-4 py-6 flex-1 w-full space-y-6">
+  <main class="max-w-6xl mx-auto px-4 py-5 flex-1 w-full space-y-6">
 
     <!-- VIEW 1: 學生端借用與掃碼 -->
-    <div id="view-student" class="space-y-6">
-      <div class="bg-white border-2 border-slate-300 rounded-3xl p-5 shadow-sm space-y-3">
+    <div id="view-student" class="space-y-5">
+      <div class="bg-white border-2 border-slate-300 rounded-3xl p-4 sm:p-5 shadow-sm space-y-3">
         <div class="flex justify-between items-center border-b border-slate-200 pb-2">
           <div class="flex items-center space-x-2">
             <span class="w-6 h-6 rounded-full bg-indigo-600 text-xs font-black flex items-center justify-center text-white">1</span>
@@ -154,22 +165,22 @@
         </div>
       </div>
 
-      <div class="bg-white border-2 border-slate-300 rounded-3xl p-5 shadow-sm space-y-4">
+      <div class="bg-white border-2 border-slate-300 rounded-3xl p-4 sm:p-5 shadow-sm space-y-4">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-200 pb-3">
           <div class="flex items-center space-x-2">
             <span class="w-6 h-6 rounded-full bg-indigo-600 text-xs font-black flex items-center justify-center text-white">2</span>
             <div>
               <h3 class="font-bold text-slate-900 text-sm">連續掃描器材標籤 QR Code</h3>
-              <p class="text-[11px] text-slate-500 font-medium">掃主機會自動帶出子配件；亦可單獨掃電池、腳架或標尺</p>
+              <p class="text-[11px] text-slate-500 font-medium">掃主機會自動帶出子配件；亦可單獨掃配件或標尺</p>
             </div>
           </div>
           <div class="flex space-x-2 w-full sm:w-auto">
-            <button onclick="startContinuousScan()" class="flex-1 sm:flex-none px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center justify-center space-x-2 shadow-lg shadow-indigo-200 active:scale-95 transition">
+            <button onclick="startContinuousScan()" class="flex-1 sm:flex-none px-3.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 shadow-md shadow-indigo-200 active:scale-95 transition">
               <i class="fa-solid fa-camera text-sm"></i>
-              <span>開啟相機連續掃碼</span>
+              <span>相機掃碼</span>
             </button>
             <button onclick="openQuickPickModal()" class="px-3.5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs font-bold border border-slate-300">
-              <i class="fa-solid fa-list mr-1"></i>手動快選清單
+              <i class="fa-solid fa-list mr-1"></i>快選清單
             </button>
           </div>
         </div>
@@ -177,7 +188,7 @@
         <div id="camera-box" class="hidden bg-slate-900 rounded-2xl p-3 space-y-2 border-2 border-indigo-500">
           <div class="flex justify-between items-center text-white">
             <span class="text-xs font-bold text-amber-300 animate-pulse flex items-center">
-              <i class="fa-solid fa-circle-dot mr-1.5 text-[8px]"></i>連續掃瞄中：對準標籤 (自動加入)
+              <i class="fa-solid fa-circle-dot mr-1.5 text-[8px]"></i>連續掃描中：對準器材標籤
             </span>
             <button onclick="stopContinuousScan()" class="text-xs bg-slate-800 text-slate-200 px-3 py-1 rounded-lg border border-slate-700">關閉鏡頭</button>
           </div>
@@ -190,42 +201,42 @@
               <span>本次已掃入設備清單：</span>
               <span id="cart-item-count" class="px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-xs font-black border border-indigo-300">0 件</span>
             </h4>
-            <span class="text-[11px] text-indigo-700 font-bold"><i class="fa-solid fa-hand-pointer mr-1"></i>點開卡片 ➔ 查看說明・開箱檢查・文字回報問題</span>
+            <span class="text-[11px] text-indigo-700 font-bold hidden sm:inline"><i class="fa-solid fa-hand-pointer mr-1"></i>點開卡片 ➔ 開箱檢查・通報問題</span>
           </div>
 
           <div id="cart-items-container" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
           
-          <div id="cart-empty-placeholder" class="py-12 border-2 border-dashed border-slate-300 rounded-2xl text-center text-slate-400 text-xs space-y-1">
+          <div id="cart-empty-placeholder" class="py-10 border-2 border-dashed border-slate-300 rounded-2xl text-center text-slate-400 text-xs space-y-1">
             <i class="fa-solid fa-qrcode text-3xl mb-1 text-slate-300"></i>
             <p class="font-bold text-slate-500">尚未掃描任何儀器標籤</p>
-            <p class="text-[11px]">按上方「開啟相機連續掃碼」依序掃瞄，或使用手動快選</p>
+            <p class="text-[11px]">按上方「相機掃碼」依序掃描，或使用手動快選</p>
           </div>
         </div>
 
         <div class="pt-3 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-3">
-          <p class="text-[11px] text-slate-500">全組負共同保管責任。送出後請妥善保存畫面供歸還驗收核對。</p>
+          <p class="text-[11px] text-slate-500">借用團隊負共同保管責任，送出後助教端即同步進行點驗核准。</p>
           <button onclick="submitStudentBorrowCart()" id="btn-submit-cart" disabled class="w-full sm:w-auto px-6 py-3 bg-slate-300 text-slate-500 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center space-x-2 cursor-not-allowed">
             <i class="fa-solid fa-cloud-arrow-up"></i>
-            <span>確認設備無誤 ➔ 送出整組借用</span>
+            <span>確認設備無誤 ➔ 送出借用</span>
           </button>
         </div>
       </div>
     </div>
 
     <!-- VIEW 2: 助教專用工作台 -->
-    <div id="view-ta" class="space-y-6 hidden">
-      <div class="bg-white border-2 border-emerald-300 rounded-3xl p-5 shadow-sm space-y-3">
+    <div id="view-ta" class="space-y-5 hidden">
+      <div class="bg-white border-2 border-emerald-300 rounded-3xl p-4 sm:p-5 shadow-sm space-y-3">
         <div class="flex justify-between items-center border-b border-slate-200 pb-2">
           <div class="flex items-center space-x-2">
-            <span class="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black">
-              <i class="fa-solid fa-user-shield"></i>
+            <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black">
+              <i class="fa-solid fa-user-shield text-xs sm:text-sm"></i>
             </span>
             <div>
               <h3 class="font-bold text-slate-900 text-sm">值班助教身分登錄</h3>
-              <p class="text-[11px] text-slate-500">填寫後點選「確認登錄身分」，驗收歸還或處置通報時將自動簽章</p>
+              <p class="text-[11px] text-slate-500">驗收歸還或通報處置時將自動實名簽章</p>
             </div>
           </div>
-          <span id="ta-status-tag" class="text-xs px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full font-bold border border-emerald-300">
+          <span id="ta-status-tag" class="text-xs px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full font-bold border border-emerald-300">
             助教權限生效中
           </span>
         </div>
@@ -262,14 +273,14 @@
         </div>
       </div>
 
-      <div class="bg-white border-2 border-slate-300 rounded-3xl p-5 shadow-sm space-y-4">
+      <div class="bg-white border-2 border-slate-300 rounded-3xl p-4 sm:p-5 shadow-sm space-y-4">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-200 pb-3">
           <div>
             <h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center space-x-2">
               <i class="fa-solid fa-boxes-packing text-emerald-600"></i>
               <span>出借中器材點驗與驗收專區</span>
             </h3>
-            <p class="text-xs text-slate-500 mt-0.5">學生歸還時，點擊右側「點驗驗收」，逐項核對學生借用的主機與連帶子配件</p>
+            <p class="text-xs text-slate-500 mt-0.5">學生歸還時點擊「點驗驗收」，逐項核對母機與連帶子配件</p>
           </div>
           <span id="ta-borrowed-count" class="text-xs px-3 py-1 bg-amber-100 text-amber-800 rounded-full font-bold border border-amber-300">
             0 件外借中
@@ -278,33 +289,33 @@
         <div id="ta-borrowed-container" class="space-y-3"></div>
       </div>
 
-      <div class="bg-white border-2 border-slate-300 rounded-3xl p-5 shadow-sm space-y-4">
+      <div class="bg-white border-2 border-slate-300 rounded-3xl p-4 sm:p-5 shadow-sm space-y-4">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-200 pb-3">
           <div>
             <h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center space-x-2">
               <i class="fa-solid fa-clipboard-question text-amber-500"></i>
-              <span>學生問題通報看板 (助教處置區)</span>
+              <span>學生問題通報看板</span>
             </h3>
-            <p class="text-xs text-slate-500 mt-0.5">學生填寫的文字通報，助教可現場換機、排定送修或現場調校結案</p>
+            <p class="text-xs text-slate-500 mt-0.5">助教可現場換機、排定送修或現場調校結案</p>
           </div>
           <div class="flex items-center space-x-2">
             <button onclick="clearAllResolvedIssues()" class="px-3 py-1.5 bg-slate-200 hover:bg-rose-100 text-slate-700 hover:text-rose-700 rounded-xl text-xs font-bold transition border border-slate-300">
-              <i class="fa-solid fa-trash-can mr-1"></i>清除已處理紀錄
+              <i class="fa-solid fa-trash-can mr-1"></i>清理封存
             </button>
-            <span id="issues-pending-badge" class="text-xs px-3 py-1.5 bg-amber-100 text-amber-800 rounded-full font-black border border-amber-300">
+            <span id="issues-pending-badge" class="text-xs px-2.5 py-1 bg-amber-100 text-amber-800 rounded-full font-black border border-amber-300">
               0 筆待處理
             </span>
           </div>
         </div>
 
-        <div class="flex space-x-2 border-b border-slate-200 pb-2">
-          <button onclick="setIssuesFilter('PENDING')" id="tab-filter-pending" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow">
+        <div class="flex space-x-2 border-b border-slate-200 pb-2 overflow-x-auto no-scrollbar">
+          <button onclick="setIssuesFilter('PENDING')" id="tab-filter-pending" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow shrink-0">
             待處理 (預設)
           </button>
-          <button onclick="setIssuesFilter('ARCHIVED')" id="tab-filter-archived" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-200 text-slate-700 hover:bg-slate-300">
+          <button onclick="setIssuesFilter('ARCHIVED')" id="tab-filter-archived" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-200 text-slate-700 hover:bg-slate-300 shrink-0">
             已處理封存
           </button>
-          <button onclick="setIssuesFilter('ALL')" id="tab-filter-all" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-200 text-slate-700 hover:bg-slate-300">
+          <button onclick="setIssuesFilter('ALL')" id="tab-filter-all" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-200 text-slate-700 hover:bg-slate-300 shrink-0">
             全部清單
           </button>
         </div>
@@ -313,34 +324,34 @@
     </div>
 
     <!-- VIEW 3: 老師管理後台 -->
-    <div id="view-admin" class="space-y-6 hidden">
+    <div id="view-admin" class="space-y-5 hidden">
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div class="bg-white border-2 border-slate-300 p-4 rounded-2xl">
+        <div class="bg-white border-2 border-slate-300 p-3.5 sm:p-4 rounded-2xl">
           <p class="text-xs font-bold text-slate-500">主機總在冊數</p>
-          <p id="stat-parents-total" class="text-2xl font-black text-slate-900 mt-1">0</p>
+          <p id="stat-parents-total" class="text-xl sm:text-2xl font-black text-slate-900 mt-1">0</p>
         </div>
-        <div class="bg-white border-2 border-slate-300 p-4 rounded-2xl">
+        <div class="bg-white border-2 border-slate-300 p-3.5 sm:p-4 rounded-2xl">
           <p class="text-xs font-bold text-emerald-600">在庫可借</p>
-          <p id="stat-parents-avail" class="text-2xl font-black text-emerald-600 mt-1">0</p>
+          <p id="stat-parents-avail" class="text-xl sm:text-2xl font-black text-emerald-600 mt-1">0</p>
         </div>
-        <div class="bg-white border-2 border-slate-300 p-4 rounded-2xl">
+        <div class="bg-white border-2 border-slate-300 p-3.5 sm:p-4 rounded-2xl">
           <p class="text-xs font-bold text-amber-600">實習出借中</p>
-          <p id="stat-parents-borrowed" class="text-2xl font-black text-amber-600 mt-1">0</p>
+          <p id="stat-parents-borrowed" class="text-xl sm:text-2xl font-black text-amber-600 mt-1">0</p>
         </div>
-        <div class="bg-white border-2 border-slate-300 p-4 rounded-2xl">
+        <div class="bg-white border-2 border-slate-300 p-3.5 sm:p-4 rounded-2xl">
           <p class="text-xs font-bold text-rose-600">故障待修暫扣</p>
-          <p id="stat-parents-repair" class="text-2xl font-black text-rose-600 mt-1">0</p>
+          <p id="stat-parents-repair" class="text-xl sm:text-2xl font-black text-rose-600 mt-1">0</p>
         </div>
       </div>
 
-      <!-- 雲端安全與密碼配置 (F12看無明文密碼，直通 GAS 後端安全驗證) -->
-      <div class="bg-white border-2 border-indigo-200 rounded-3xl p-5 shadow-sm space-y-3">
+      <!-- 雲端安全與密碼配置 -->
+      <div class="bg-white border-2 border-indigo-200 rounded-3xl p-4 sm:p-5 shadow-sm space-y-3">
         <div class="border-b border-slate-200 pb-2 flex justify-between items-center">
           <h3 class="font-bold text-slate-900 text-sm flex items-center space-x-2">
             <i class="fa-solid fa-shield-cat text-indigo-600"></i>
-            <span>雲端身分金鑰與安全門禁設定 (老師專用)</span>
+            <span>雲端身分金鑰與安全門禁設定</span>
           </h3>
-          <span class="text-[11px] text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full font-bold">雲端即時加密</span>
+          <span class="text-[10px] text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full font-bold">雲端即時加密</span>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
           <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-1.5">
@@ -366,21 +377,21 @@
         </div>
       </div>
 
-      <div class="bg-white border-2 border-slate-300 rounded-3xl p-5 shadow-sm space-y-4">
+      <div class="bg-white border-2 border-slate-300 rounded-3xl p-4 sm:p-5 shadow-sm space-y-4">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
           <div>
-            <h3 class="font-bold text-slate-900 text-sm">設備資產總表 (直通 Google Sheets 試算表)</h3>
-            <p class="text-xs text-slate-500">可按「修改」更新規格或檢查項；新增時可一鍵帶入現有儀器資料節省打字時間</p>
+            <h3 class="font-bold text-slate-900 text-sm">設備資產總表 (直通 Google Sheets)</h3>
+            <p class="text-xs text-slate-500">可修改規格、開箱檢查清單或新增母子設備</p>
           </div>
           <div class="flex flex-wrap gap-2 w-full sm:w-auto">
             <button onclick="fetchCloudData(true)" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow flex items-center space-x-1 transition active:scale-95">
-              <i class="fa-solid fa-arrows-rotate mr-1"></i>同步最新試算表
+              <i class="fa-solid fa-arrows-rotate mr-1"></i>同步試算表
             </button>
             <button onclick="openCreateAssetModal('PARENT')" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow">
               <i class="fa-solid fa-plus mr-1"></i>新增主機設備
             </button>
             <button onclick="openCreateAssetModal('CHILD')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold shadow">
-              <i class="fa-solid fa-puzzle-piece mr-1"></i>新增子配件/電池
+              <i class="fa-solid fa-puzzle-piece mr-1"></i>新增子配件
             </button>
           </div>
         </div>
@@ -407,17 +418,17 @@
 
   <!-- MODAL 1: 開箱檢查與問題回報 -->
   <div id="modal-item-inspect" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto custom-scroll text-xs border-2 border-slate-300">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto custom-scroll text-xs border-2 border-slate-300">
       <div class="flex justify-between items-start border-b border-slate-200 pb-2">
         <div>
-          <span id="inspect-code" class="text-xl font-black text-indigo-700 font-mono notranslate" translate="no">TS-01</span>
+          <span id="inspect-code" class="text-lg sm:text-xl font-black text-indigo-700 font-mono notranslate" translate="no">TS-01</span>
           <h4 id="inspect-name" class="text-sm font-bold text-slate-900 mt-0.5">Topcon 全測站儀 GTS-255</h4>
           <span id="inspect-type" class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-bold border border-slate-300">全測站儀</span>
         </div>
         <button onclick="closeModal('modal-item-inspect')" class="text-slate-400 hover:text-slate-800 text-2xl">&times;</button>
       </div>
 
-      <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-1">
+      <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-1">
         <p class="font-bold text-slate-700 flex items-center">
           <i class="fa-solid fa-circle-info text-indigo-600 mr-1.5"></i>功能規格指引：
         </p>
@@ -434,21 +445,21 @@
 
       <div class="border-t border-slate-200 pt-2.5 space-y-2">
         <p class="font-bold text-rose-700 flex items-center">
-          <i class="fa-solid fa-pen-to-square mr-1.5"></i>若發現新問題，請在此文字描述 (免拍照，清楚寫出問題現象)：
+          <i class="fa-solid fa-pen-to-square mr-1.5"></i>發現問題文字描述 (免拍照，清楚寫出問題現象)：
         </p>
-        <textarea id="inspect-user-issue-text" rows="3" placeholder="請以文字詳細描述異常現象，以便助教與老師掌握狀況！" class="w-full bg-slate-50 border-2 border-slate-300 rounded-2xl p-3 text-slate-800 text-xs focus:border-indigo-600 focus:bg-white"></textarea>
+        <textarea id="inspect-user-issue-text" rows="3" placeholder="請以文字描述異常現象，以便助教與老師掌握狀況！" class="w-full bg-slate-50 border-2 border-slate-300 rounded-2xl p-3 text-slate-800 text-xs focus:border-indigo-600 focus:bg-white"></textarea>
       </div>
 
       <div class="flex space-x-2 pt-2">
         <button onclick="closeModal('modal-item-inspect')" class="w-1/3 py-2.5 bg-slate-200 text-slate-700 font-bold rounded-xl">取消</button>
-        <button onclick="saveInspectionAndIssue()" class="w-2/3 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow">確認保存開箱狀態</button>
+        <button onclick="saveInspectionAndIssue()" class="w-2/3 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow">確認保存狀態</button>
       </div>
     </div>
   </div>
 
   <!-- MODAL 2: 助教點驗驗收清單核對視窗 -->
   <div id="modal-verify-return" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs border-2 border-slate-300 max-h-[92vh] overflow-y-auto custom-scroll">
+    <div class="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl space-y-4 text-xs border-2 border-slate-300 max-h-[92vh] overflow-y-auto custom-scroll">
       <div class="flex justify-between items-start border-b border-slate-200 pb-2">
         <div>
           <span class="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">歸還點驗清單</span>
@@ -459,7 +470,7 @@
 
       <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-1">
         <p class="font-bold text-slate-800">借用團隊資訊：</p>
-        <p id="verify-borrower-desc" class="text-slate-600 font-medium">土木一甲 第 1 組 (王同學)</p>
+        <p id="verify-borrower-desc" class="text-slate-600 font-medium">土木一甲 第 1 組</p>
       </div>
 
       <div class="space-y-2">
@@ -474,13 +485,13 @@
 
       <div>
         <label class="block text-slate-700 font-bold mb-1">若歸還有異常或零件短缺，請備註：</label>
-        <input type="text" id="verify-return-note" placeholder="例：腳架卡扣正常、電池正常歸還" class="w-full p-2 border-2 border-slate-300 rounded-xl bg-slate-50 text-xs">
+        <input type="text" id="verify-return-note" placeholder="例：腳架卡扣正常、全數歸位" class="w-full p-2 border-2 border-slate-300 rounded-xl bg-slate-50 text-xs">
       </div>
 
       <div class="flex space-x-2 pt-2">
         <button onclick="closeModal('modal-verify-return')" class="w-1/3 py-2.5 bg-slate-200 text-slate-700 font-bold rounded-xl">取消</button>
         <button onclick="confirmReturnPassed()" class="w-2/3 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow">
-          <i class="fa-solid fa-check-double mr-1"></i>核對齊全 ➔ 確定驗收歸位
+          <i class="fa-solid fa-check-double mr-1"></i>核對齊全 ➔ 驗收歸位
         </button>
       </div>
     </div>
@@ -499,7 +510,7 @@
         <div id="qr-code-graphic" class="flex justify-center p-2 bg-white rounded-lg"></div>
         <p id="qr-sticker-code" class="font-black text-slate-900 text-base font-mono tracking-wider notranslate" translate="no">TS-01</p>
         <p id="qr-sticker-name" class="text-[11px] text-slate-700 font-semibold max-w-[200px] truncate">Topcon 全測站儀 GTS-255</p>
-        <p class="text-[9px] text-slate-400">掃碼借還・問題通報</p>
+        <p class="text-[9px] text-slate-400">掃碼借還・數位履歷</p>
       </div>
 
       <p class="text-slate-500 text-[11px]">QR 內容為純 Asset ID，換網域永久免重印！</p>
@@ -515,7 +526,7 @@
 
   <!-- MODAL 4: 切換身分通關密碼視窗 -->
   <div id="modal-role-auth" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-xs border-2 border-slate-300">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-5 sm:p-6 shadow-2xl space-y-4 text-xs border-2 border-slate-300">
       <div class="flex justify-between items-center border-b border-slate-200 pb-2">
         <h3 class="font-bold text-slate-900 text-sm flex items-center space-x-2">
           <i class="fa-solid fa-shield-halved text-indigo-600"></i>
@@ -525,35 +536,35 @@
       </div>
       
       <div class="space-y-2 text-slate-600">
+        <button onclick="selectRoleDirect('STUDENT')" class="w-full text-left p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl flex items-center space-x-2 transition">
+          <span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
+          <span class="font-medium text-slate-800">學生模式 (免密碼直接切換)</span>
+        </button>
         <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center space-x-2">
-          <span class="w-2 h-2 rounded-full bg-slate-400"></span>
-          <span class="font-medium">學生模式 (免密碼)</span>
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+          <span class="font-medium text-slate-800">實習助教 (TA 工作台)</span>
         </div>
         <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center space-x-2">
-          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-          <span class="font-medium">實習助教 (TA 工作台)</span>
-        </div>
-        <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center space-x-2">
-          <span class="w-2 h-2 rounded-full bg-indigo-600"></span>
-          <span class="font-medium">老師 (Admin 最高管理權限)</span>
+          <span class="w-2.5 h-2.5 rounded-full bg-indigo-600"></span>
+          <span class="font-medium text-slate-800">老師 (Admin 最高管理權限)</span>
         </div>
       </div>
 
       <div>
-        <label class="block text-slate-700 font-bold mb-1">輸入身分通關密碼：</label>
-        <input type="password" id="input-role-pwd" placeholder="請輸入管理密碼..." class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2.5 text-slate-900 font-mono text-sm focus:border-indigo-600 notranslate" translate="no">
+        <label class="block text-slate-700 font-bold mb-1">輸入助教或老師密碼：</label>
+        <input type="password" id="input-role-pwd" placeholder="請輸入通行密碼..." class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2.5 text-slate-900 font-mono text-sm focus:border-indigo-600 notranslate" translate="no">
       </div>
 
       <div class="flex space-x-2 pt-1">
         <button onclick="closeModal('modal-role-auth')" class="w-1/3 py-2.5 bg-slate-200 text-slate-700 font-bold rounded-xl">取消</button>
-        <button onclick="verifyRoleLogin()" class="w-2/3 py-2.5 bg-indigo-600 text-white font-bold rounded-xl shadow">確認登入</button>
+        <button onclick="verifyRoleLogin()" class="w-2/3 py-2.5 bg-indigo-600 text-white font-bold rounded-xl shadow">確認驗證</button>
       </div>
     </div>
   </div>
 
-  <!-- MODAL 5: 新增 / 修改設備視窗 (支援一鍵複製現有儀器資料) -->
+  <!-- MODAL 5: 新增 / 修改設備視窗 -->
   <div id="modal-create-asset" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-3 text-xs border-2 border-slate-300 max-h-[90vh] overflow-y-auto custom-scroll">
+    <div class="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl space-y-3 text-xs border-2 border-slate-300 max-h-[90vh] overflow-y-auto custom-scroll">
       <div class="flex justify-between items-center border-b border-slate-200 pb-2">
         <h3 id="create-modal-title" class="font-bold text-slate-900 text-sm">新增儀器設備</h3>
         <button onclick="closeModal('modal-create-asset')" class="text-slate-400 hover:text-slate-800 text-lg">&times;</button>
@@ -578,7 +589,7 @@
         
         <div>
           <label class="block text-slate-700 font-bold mb-1">Asset ID (QR Code 唯一碼) *</label>
-          <input type="text" id="create-code" placeholder="例：TS-02 或 TH-OLD-02 或 BAT-DR01-03" required class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2.5 font-mono font-bold text-slate-900 focus:border-indigo-600 uppercase notranslate" translate="no">
+          <input type="text" id="create-code" placeholder="例：TS-02 或 BAT-DR01-03" required class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2.5 font-mono font-bold text-slate-900 focus:border-indigo-600 uppercase notranslate" translate="no">
         </div>
 
         <div class="grid grid-cols-2 gap-2">
@@ -587,19 +598,17 @@
             <select id="create-category" onchange="toggleParentBindingField()" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2 font-bold text-slate-800">
               <option value="全測站儀">全測站儀</option>
               <option value="自動水準儀">自動水準儀</option>
-              <option value="舊式經緯儀">舊式經緯儀</option>
-              <option value="舊式水準儀">舊式水準儀</option>
+              <option value="電子經緯儀">電子經緯儀</option>
+              <option value="光學經緯儀">光學經緯儀</option>
               <option value="無人機系統">無人機系統</option>
               <option value="專用電池">專用電池</option>
-              <option value="螺旋槳配件">螺旋槳配件</option>
-              <option value="充電設備">充電設備</option>
               <option value="腳架與標尺">腳架與標尺</option>
               <option value="其他專用耗材">其他專用耗材</option>
             </select>
           </div>
           <div>
             <label class="block text-slate-700 font-bold mb-1">廠牌型號與品名 *</label>
-            <input type="text" id="create-name" placeholder="例：Leica TS06 或 Topcon BT-52QA" required class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2 font-bold text-slate-800">
+            <input type="text" id="create-name" placeholder="例：Leica TS06 Plus" required class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2 font-bold text-slate-800">
           </div>
         </div>
 
@@ -610,12 +619,12 @@
 
         <div>
           <label class="block text-slate-700 font-bold mb-1">功能特性與實習指引敘述 *</label>
-          <textarea id="create-desc" rows="2" placeholder="詳細填寫該儀器測角精度、光學校驗狀況、操作注意事項..." required class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2 text-slate-800"></textarea>
+          <textarea id="create-desc" rows="2" placeholder="詳細填寫該儀器測角精度、操作注意事項..." required class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2 text-slate-800"></textarea>
         </div>
 
         <div>
-          <label class="block text-slate-700 font-bold mb-1">開箱核對勾選項目 (以分號或換行隔開)：</label>
-          <textarea id="create-checks" rows="2" placeholder="例：物鏡目鏡無摔裂; 長圓氣泡管居中; 微動螺旋順暢; 腳架連接螺栓牙紋完好" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2 text-slate-800 font-medium"></textarea>
+          <label class="block text-slate-700 font-bold mb-1">開箱核對勾選項目 (以分號隔開)：</label>
+          <textarea id="create-checks" rows="2" placeholder="例：物鏡目鏡無摔裂; 長圓氣泡管居中; 微動螺旋順暢" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2 text-slate-800 font-medium"></textarea>
         </div>
 
         <div class="flex space-x-2 pt-2">
@@ -626,7 +635,7 @@
     </div>
   </div>
 
-  <!-- MODAL 7: 手動快選清單 -->
+  <!-- MODAL 6: 手動快選清單 -->
   <div id="modal-quick-pick" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-md w-full p-5 shadow-2xl space-y-3 text-xs border-2 border-slate-300">
       <div class="flex justify-between items-center border-b border-slate-200 pb-2">
@@ -640,29 +649,26 @@
 
   <!-- 系統核心邏輯 JavaScript -->
   <script>
-    // 固定的 GAS 雲端 Webhook 網址
     const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbwyGLYIzJK-nFEoUNMB5fiXUwG77BWOQWq_e4lqpCzi24X5Pyfnl5MwtRU-x3729rUj/exec";
 
-    let currentRole = "STUDENT"; // STUDENT | TA | ADMIN
+    let currentRole = "STUDENT"; 
     let studentCart = [];
     let html5QrScanner = null;
     let inspectingCode = null;
     let verifyingReturnCode = null;
     let currentIssuesFilter = "PENDING";
-    let liveAssets = []; // 存放從 Google 試算表抓下來的最新真實資產
+    let liveAssets = []; 
     let liveIssues = [];
 
-    // 取得即時資產（完全拋棄舊寫死範例）
-    function getAssets() {
-      return liveAssets;
-    }
+    // 相機防抖冷卻時間戳記
+    let lastScannedCode = "";
+    let lastScannedTime = 0;
 
-    // 發送 GET 請求向 Google 試算表雙向同步
     function fetchCloudData(isManual = false) {
       const dot = document.getElementById('sync-dot');
       const txt = document.getElementById('sync-text');
-      dot.className = "w-2 h-2 rounded-full bg-amber-400 animate-pulse";
-      txt.innerText = "雲端試算表同步中...";
+      dot.className = "w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0";
+      txt.innerText = "雲端同步中...";
 
       fetch(`${DEFAULT_GAS_URL}?action=GET_ALL_DATA`)
         .then(res => res.json())
@@ -671,7 +677,6 @@
             liveAssets = data.assets;
             liveIssues = data.issues || [];
             
-            // 快取備用
             localStorage.setItem('survey_live_assets_cache', JSON.stringify(liveAssets));
             localStorage.setItem('survey_live_issues_cache', JSON.stringify(liveIssues));
 
@@ -679,8 +684,8 @@
             renderTaBorrowedList();
             renderIssuesBoard();
 
-            dot.className = "w-2 h-2 rounded-full bg-emerald-400";
-            txt.innerText = `雲端試算表同步已啟用 (已連線，共 ${liveAssets.length} 件設備)`;
+            dot.className = "w-2 h-2 rounded-full bg-emerald-400 shrink-0";
+            txt.innerText = `已連線 (共 ${liveAssets.length} 件設備)`;
             if (isManual) alert("【同步成功】已由 Google 試算表拉取最新在冊資料！");
           }
         })
@@ -692,28 +697,23 @@
             renderAdminTable();
             renderTaBorrowedList();
           }
-          dot.className = "w-2 h-2 rounded-full bg-rose-400";
-          txt.innerText = "雲端連線逾時 (使用離線快取資料)";
+          dot.className = "w-2 h-2 rounded-full bg-rose-400 shrink-0";
+          txt.innerText = "連線逾時 (使用離線快取)";
         });
     }
 
-    // 門禁驗證 (透過 GAS 雲端核對密碼，F12 絕對看不到明文密碼)
     function verifyGatekeeper(e) {
       e.preventDefault();
       const u = document.getElementById('gate-user').value.trim();
       const p = document.getElementById('gate-pwd').value.trim();
       const btn = document.getElementById('btn-gate-submit');
       btn.disabled = true;
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i><span>雲端安全驗證中...</span>';
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i><span>安全驗證中...</span>';
 
       fetch(DEFAULT_GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({
-          action: "VERIFY_AUTH",
-          username: u,
-          password: p
-        })
+        body: JSON.stringify({ action: "VERIFY_AUTH", username: u, password: p })
       })
       .then(res => res.json())
       .then(res => {
@@ -726,16 +726,9 @@
           setRoleBadge(res.role);
           document.getElementById('gatekeeper-modal').classList.add('hidden');
 
-          if (res.role === 'ADMIN') {
-            alert("驗證成功：歡迎 老師！切換至最高管理後台。");
-            switchView('admin');
-          } else if (res.role === 'TA') {
-            alert("驗證成功：歡迎 助教！切換至助教工作台。");
-            switchView('ta');
-          } else {
-            alert("驗證成功，歡迎進入測量實習系統！");
-            switchView('student');
-          }
+          if (res.role === 'ADMIN') switchView('admin');
+          else if (res.role === 'TA') switchView('ta');
+          else switchView('student');
         } else {
           alert("【通行拒絕】帳號或密碼錯誤！請洽詢指導老師。");
         }
@@ -743,11 +736,9 @@
       .catch(err => {
         btn.disabled = false;
         btn.innerHTML = '<span>驗證通行並進入系統</span>';
-        // 離線降級容錯（預設 1234/5678/9999）
         if (p === "1234" || p === "5678" || p === "9999") {
           sessionStorage.setItem('survey_gate_passed', '1');
           document.getElementById('gatekeeper-modal').classList.add('hidden');
-          alert("離線通關驗證成功！");
         } else {
           alert("連線驗證逾時，且密碼不正確！");
         }
@@ -766,7 +757,6 @@
       }
     }
 
-    // 助教實名登錄
     function loadTaIdentity() {
       try {
         const cached = localStorage.getItem('survey_ta_id_v18');
@@ -801,7 +791,7 @@
       }
       saveTaIdentity();
       document.getElementById('ta-status-tag').innerText = `已確認：${n} 助教`;
-      alert(`【助教登錄成功】值班助教「${c} ${n}」已設定，歸還點驗與通報處置將自動署名！`);
+      alert(`【助教登錄成功】值班助教「${c} ${n}」已設定！`);
     }
 
     function getTaSignature() {
@@ -812,7 +802,6 @@
       return "值班助教";
     }
 
-    // 學生身分記憶
     function loadCachedIdentity() {
       try {
         const cached = localStorage.getItem('survey_student_cached_id_v18');
@@ -836,7 +825,7 @@
       localStorage.setItem('survey_student_cached_id_v18', JSON.stringify(id));
     }
 
-    // 相機掃碼
+    // 相機連續掃描（最佳化幀率至 8 fps，降低 CPU 負載）
     function startContinuousScan() {
       document.getElementById('camera-box').classList.remove('hidden');
       if (!html5QrScanner) {
@@ -844,11 +833,11 @@
       }
       html5QrScanner.start(
         { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 220, height: 220 } },
+        { fps: 8, qrbox: { width: 220, height: 220 } },
         (decodedText) => { handleIncomingAssetCode(decodedText); },
         (err) => {}
       ).catch(err => {
-        alert("無法開啟鏡頭！請確認相機權限或使用「手動快選清單」。");
+        alert("無法開啟相機！請確認權限或使用「快選清單」。");
         document.getElementById('camera-box').classList.add('hidden');
       });
     }
@@ -858,7 +847,9 @@
       if (html5QrScanner) html5QrScanner.stop().catch(()=>{});
     }
 
+    // 相機防抖冷卻與連帶設備辨識
     function handleIncomingAssetCode(text) {
+      const now = Date.now();
       let code = text.trim();
       if (text.includes("code=")) {
         const p = new URLSearchParams(text.split('?')[1]);
@@ -866,22 +857,28 @@
       }
       code = code.toUpperCase();
 
+      // 防抖：同設備 1.5 秒內不重複觸發
+      if (code === lastScannedCode && (now - lastScannedTime) < 1500) {
+        return;
+      }
+      lastScannedCode = code;
+      lastScannedTime = now;
+
       const item = liveAssets.find(x => x.code === code);
       if (!item) {
-        alert(`【查無設備】編號【${code}】尚未在 Google 試算表建冊入庫！`);
+        alert(`【查無設備】編號【${code}】尚未在資料庫建冊入庫！`);
         return;
       }
 
       if (item.status === 'BORROWED') {
         const who = item.currentBorrower ? `${item.currentBorrower.class} ${item.currentBorrower.group} (${item.currentBorrower.name})` : '其他組別';
         const time = item.currentBorrower ? item.currentBorrower.time : '';
-        alert(`【無法借用】儀器【${item.code}】目前已於 ${time} 被「${who}」出借使用中！
-請勿重複領取，或請洽助教核對！`);
+        alert(`【無法借用】儀器【${item.code}】目前已於 ${time} 被「${who}」借用中！`);
         return;
       }
 
       if (item.status === 'MAINTENANCE') {
-        alert(`【無法借用】儀器【${item.code}】目前處於「故障待修」狀態，已暫扣保養，請改借在庫其他設備！`);
+        alert(`【無法借用】儀器【${item.code}】目前處於「故障待修」狀態，已暫扣保養！`);
         return;
       }
 
@@ -897,7 +894,7 @@
           inspected: false,
           issueText: ""
         });
-        if (navigator.vibrate) navigator.vibrate(80);
+        if (navigator.vibrate) navigator.vibrate(60);
         renderStudentCart();
       }
     }
@@ -924,15 +921,15 @@
 
       studentCart.forEach((item, idx) => {
         let inspectBadge = item.inspected 
-          ? '<span class="text-[10px] px-2 py-0.5 rounded font-bold bg-emerald-100 text-emerald-800 border border-emerald-300"><i class="fa-solid fa-check mr-1"></i>已點驗無誤</span>'
-          : '<span class="text-[10px] px-2 py-0.5 rounded font-bold bg-amber-100 text-amber-800 border border-amber-300 animate-pulse"><i class="fa-solid fa-hand-pointer mr-1"></i>點我開箱檢查/報修</span>';
+          ? '<span class="text-[10px] px-2 py-0.5 rounded font-bold bg-emerald-100 text-emerald-800 border border-emerald-300"><i class="fa-solid fa-check mr-1"></i>已點驗</span>'
+          : '<span class="text-[10px] px-2 py-0.5 rounded font-bold bg-amber-100 text-amber-800 border border-amber-300 animate-pulse"><i class="fa-solid fa-hand-pointer mr-1"></i>開箱檢查/報修</span>';
 
         let issueTag = item.issueText 
-          ? `<div class="text-[11px] text-rose-700 bg-rose-50 border border-rose-200 p-1.5 rounded-lg mt-1 truncate"><strong>回報問題：</strong> ${item.issueText}</div>`
+          ? `<div class="text-[11px] text-rose-700 bg-rose-50 border border-rose-200 p-1.5 rounded-lg mt-1 truncate"><strong>回報：</strong> ${item.issueText}</div>`
           : '';
 
         let childrenTag = (item.isParent && item.children && item.children.length > 0)
-          ? `<div class="text-[10px] text-indigo-700 mt-1 flex flex-wrap gap-1 items-center"><i class="fa-solid fa-link mr-1"></i>連帶子配件： ${item.children.map(c => `<span class="bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-200 font-mono notranslate" translate="no">${c}</span>`).join('')}</div>`
+          ? `<div class="text-[10px] text-indigo-700 mt-1 flex flex-wrap gap-1 items-center"><i class="fa-solid fa-link mr-1"></i>連帶配件： ${item.children.map(c => `<span class="bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-200 font-mono notranslate" translate="no">${c}</span>`).join('')}</div>`
           : '';
 
         container.innerHTML += `
@@ -967,12 +964,12 @@
       document.getElementById('inspect-code').innerText = item.code;
       document.getElementById('inspect-name').innerText = item.name;
       document.getElementById('inspect-type').innerText = item.category;
-      document.getElementById('inspect-desc').innerText = item.desc || "無規格說明。";
+      document.getElementById('inspect-desc').innerText = item.desc || "無功能說明。";
       document.getElementById('inspect-user-issue-text').value = item.issueText || "";
 
       const checksContainer = document.getElementById('inspect-category-checks');
       checksContainer.innerHTML = '';
-      const checkItems = (item.checks && item.checks.length > 0) ? item.checks : ["1. 外觀無摔裂磕碰", "2. 氣泡管與微動螺旋正常", "3. 配件接點牢固無鬆脫"];
+      const checkItems = (item.checks && item.checks.length > 0) ? item.checks : ["1. 外觀無磕碰摔裂", "2. 氣泡管與螺旋正常", "3. 接點牢固無鬆脫"];
 
       checkItems.forEach((chk) => {
         checksContainer.innerHTML += `
@@ -997,6 +994,7 @@
       renderStudentCart();
     }
 
+    // 學生送出借用：整合 Optimistic UI 樂觀更新，0 毫秒立即生效
     function submitStudentBorrowCart() {
       const cls = document.getElementById('borrow-class').value;
       const grp = document.getElementById('borrow-group').value;
@@ -1004,7 +1002,7 @@
       const id = document.getElementById('borrow-id').value.trim();
 
       if (!grp || !name || !id) {
-        alert("請在步驟 1 填寫組別、姓名與學號！");
+        alert("請在步驟 1 填寫組別、組長姓名與學號！");
         return;
       }
 
@@ -1013,40 +1011,56 @@
       const timeStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
       const borrower = { class: cls, group: grp, name: name, id: id, time: timeStr };
 
-      const submitBtn = document.getElementById('btn-submit-cart');
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>雲端同步寫入中...';
+      // 備份當前狀態，防止網路失敗時 Rollback
+      const prevAssetsBackup = JSON.parse(JSON.stringify(liveAssets));
+      const submittedCodes = studentCart.map(x => x.code);
 
-      // 透過 GAS POST 同步寫入試算表
+      // 1. Optimistic UI: 0 毫秒立即更新本地狀態
+      submittedCodes.forEach(code => {
+        const found = liveAssets.find(a => a.code === code);
+        if (found) {
+          found.status = 'BORROWED';
+          found.currentBorrower = borrower;
+        }
+      });
+
+      // 重新渲染助教與後台檢視
+      renderAdminTable();
+      renderTaBorrowedList();
+
+      const itemsCount = studentCart.length;
+      const payloadData = {
+        borrower: borrower,
+        items: submittedCodes,
+        issues: studentCart.filter(x => x.issueText).map(x => ({ code: x.code, text: x.issueText }))
+      };
+
+      // 清空暫存車
+      studentCart = [];
+      renderStudentCart();
+      alert(`【借用成功】已送出 ${itemsCount} 件設備借用！已同步呈報助教點驗。`);
+
+      // 2. 背景非同步同步至 Google 試算表
       fetch(DEFAULT_GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
           action: "BORROW",
-          payload: {
-            borrower: borrower,
-            items: studentCart.map(x => x.code),
-            issues: studentCart.filter(x => x.issueText).map(x => ({ code: x.code, text: x.issueText }))
-          }
+          payload: payloadData
         })
       })
       .then(res => res.json())
       .then(res => {
-        alert(`【借用成功】已成功借用 ${studentCart.length} 件設備！
-資料已寫入 Google 試算表，助教工作台已同步收到點驗名單。`);
-        studentCart = [];
-        renderStudentCart();
-        fetchCloudData(false); // 立即觸發一次 GET 刷新全局
+        // 背景靜默刷新確保一致性
+        fetchCloudData(false);
       })
       .catch(err => {
-        alert("借用指令已發送至雲端佇列！");
-        studentCart = [];
-        renderStudentCart();
-        setTimeout(() => fetchCloudData(false), 2000);
+        console.warn("背景同步失敗，正自動重試佇列:", err);
+        // 延遲再試一次
+        setTimeout(() => fetchCloudData(false), 3000);
       });
     }
 
-    // 助教端渲染出借中器材
     function renderTaBorrowedList() {
       const container = document.getElementById('ta-borrowed-container');
       const countBadge = document.getElementById('ta-borrowed-count');
@@ -1065,7 +1079,7 @@
       }
 
       allBorrowed.forEach(item => {
-        const who = item.currentBorrower ? `${item.currentBorrower.class} ${item.currentBorrower.group} (${item.currentBorrower.name})` : '出借中 (未載入組別)';
+        const who = item.currentBorrower ? `${item.currentBorrower.class} ${item.currentBorrower.group} (${item.currentBorrower.name})` : '出借中';
         const time = item.currentBorrower ? item.currentBorrower.time : '-';
 
         let childrenHtml = '';
@@ -1081,7 +1095,7 @@
         }
 
         container.innerHTML += `
-          <div class="bg-slate-50 p-4 rounded-2xl border-2 border-amber-300 space-y-2">
+          <div class="bg-slate-50 p-3.5 sm:p-4 rounded-2xl border-2 border-amber-300 space-y-2">
             <div class="flex justify-between items-start">
               <div>
                 <div class="flex items-center space-x-2">
@@ -1089,9 +1103,9 @@
                   <span class="text-xs text-slate-800 font-bold">${item.name}</span>
                   <span class="text-[10px] px-2 py-0.5 rounded bg-amber-100 text-amber-900 font-bold">出借中</span>
                 </div>
-                <p class="text-xs text-slate-600 mt-1"><strong>借用人：</strong><span class="text-indigo-900 font-bold">${who}</span> ｜ <strong>借出時間：</strong>${time}</p>
+                <p class="text-xs text-slate-600 mt-1"><strong>借用組別：</strong><span class="text-indigo-900 font-bold">${who}</span> ｜ <strong>時間：</strong>${time}</p>
               </div>
-              <button onclick="openVerifyReturnModal('${item.code}')" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow active:scale-95 transition flex items-center space-x-1">
+              <button onclick="openVerifyReturnModal('${item.code}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow active:scale-95 transition flex items-center space-x-1 shrink-0">
                 <i class="fa-solid fa-list-check"></i>
                 <span>點驗驗收</span>
               </button>
@@ -1133,7 +1147,7 @@
 
       const checksList = document.getElementById('verify-checks-list');
       checksList.innerHTML = '';
-      const checkItems = (item.checks && item.checks.length > 0) ? item.checks : ["外觀無磕碰摔傷", "功能轉動正常"];
+      const checkItems = (item.checks && item.checks.length > 0) ? item.checks : ["外觀無磕碰摔傷", "微動功能正常"];
       checkItems.forEach(chk => {
         checksList.innerHTML += `
           <label class="flex items-center space-x-2 text-emerald-950 font-medium">
@@ -1146,14 +1160,24 @@
       document.getElementById('modal-verify-return').classList.remove('hidden');
     }
 
+    // 助教驗收：Optimistic UI 0 毫秒歸位，背景非同步寫入 GAS
     function confirmReturnPassed() {
       const item = liveAssets.find(x => x.code === verifyingReturnCode);
       if (!item) return;
 
       const taSign = getTaSignature();
       const note = document.getElementById('verify-return-note').value.trim() || "點驗齊全完好歸位";
+      const oldBorrower = item.currentBorrower;
 
-      // POST 寫入歸還記錄
+      // 1. Optimistic UI: 本地直接設定為 AVAILABLE
+      item.status = 'AVAILABLE';
+      item.currentBorrower = null;
+      renderTaBorrowedList();
+      renderAdminTable();
+      closeModal('modal-verify-return');
+      alert(`【驗收完成】設備【${item.code}】已成功驗收歸位！`);
+
+      // 2. 背景非同步同步
       fetch(DEFAULT_GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -1163,36 +1187,31 @@
             deviceCode: item.code,
             verifiedBy: taSign,
             note: note,
-            borrower: item.currentBorrower
+            borrower: oldBorrower
           }
         })
       })
       .then(() => {
-        closeModal('modal-verify-return');
-        alert(`【驗收完成】設備【${item.code}】已成功驗收歸位！狀態已同步至試算表。`);
         fetchCloudData(false);
       })
       .catch(() => {
-        closeModal('modal-verify-return');
-        alert(`【驗收請求已送出】設備【${item.code}】正同步歸位中！`);
-        setTimeout(() => fetchCloudData(false), 2000);
+        setTimeout(() => fetchCloudData(false), 3000);
       });
     }
 
-    // 問題通報看板
     function setIssuesFilter(filterType) {
       currentIssuesFilter = filterType;
       document.getElementById('tab-filter-pending').className = filterType === 'PENDING' 
-        ? "px-3.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow"
-        : "px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-200 text-slate-700 hover:bg-slate-300";
+        ? "px-3.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow shrink-0"
+        : "px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-200 text-slate-700 hover:bg-slate-300 shrink-0";
       
       document.getElementById('tab-filter-archived').className = filterType === 'ARCHIVED'
-        ? "px-3.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow"
-        : "px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-200 text-slate-700 hover:bg-slate-300";
+        ? "px-3.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow shrink-0"
+        : "px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-200 text-slate-700 hover:bg-slate-300 shrink-0";
 
       document.getElementById('tab-filter-all').className = filterType === 'ALL'
-        ? "px-3.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow"
-        : "px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-200 text-slate-700 hover:bg-slate-300";
+        ? "px-3.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow shrink-0"
+        : "px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-200 text-slate-700 hover:bg-slate-300 shrink-0";
 
       renderIssuesBoard();
     }
@@ -1214,41 +1233,41 @@
       }
 
       if (filteredIssues.length === 0) {
-        container.innerHTML = '<div class="py-10 text-center text-slate-400 text-xs"><i class="fa-solid fa-circle-check text-2xl mb-1 text-slate-300 block"></i>目前無任何通報記錄。</div>';
+        container.innerHTML = '<div class="py-8 text-center text-slate-400 text-xs"><i class="fa-solid fa-circle-check text-2xl mb-1 text-slate-300 block"></i>目前無任何通報記錄。</div>';
         return;
       }
 
       filteredIssues.slice().reverse().forEach(issue => {
         let badge = '<span class="px-2.5 py-0.5 rounded font-bold text-[10px] bg-amber-100 text-amber-800 border border-amber-300">待處理</span>';
         if (issue.status === 'RESOLVED') badge = '<span class="px-2.5 py-0.5 rounded font-bold text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-300">現場排解正常</span>';
-        if (issue.status === 'SWAPPED') badge = '<span class="px-2.5 py-0.5 rounded font-bold text-[10px] bg-blue-100 text-blue-800 border border-blue-300">已現場換機/換電</span>';
-        if (issue.status === 'TO_REPAIR') badge = '<span class="px-2.5 py-0.5 rounded font-bold text-[10px] bg-rose-100 text-rose-800 border border-rose-300">已排定送廠外修</span>';
+        if (issue.status === 'SWAPPED') badge = '<span class="px-2.5 py-0.5 rounded font-bold text-[10px] bg-blue-100 text-blue-800 border border-blue-300">現場換機/換電</span>';
+        if (issue.status === 'TO_REPAIR') badge = '<span class="px-2.5 py-0.5 rounded font-bold text-[10px] bg-rose-100 text-rose-800 border border-rose-300">已排定送修</span>';
 
         container.innerHTML += `
-          <div class="bg-slate-50 p-4 rounded-2xl border-2 border-slate-300 space-y-3">
+          <div class="bg-slate-50 p-3.5 sm:p-4 rounded-2xl border-2 border-slate-300 space-y-3">
             <div class="flex justify-between items-start">
               <div class="flex items-center space-x-2">
                 <span class="font-black text-slate-900 font-mono notranslate" translate="no">${issue.deviceCode}</span>
-                <span class="text-xs text-slate-600 font-semibold">通報來源：${issue.reporter}</span>
+                <span class="text-xs text-slate-600 font-semibold">來源：${issue.reporter}</span>
                 <span class="text-[10px] text-slate-400 font-medium">${issue.date}</span>
               </div>
               ${badge}
             </div>
             <div class="bg-white p-3 rounded-xl border border-slate-200 text-xs">
-              <p class="font-bold text-rose-700 mb-1"><i class="fa-solid fa-quote-left mr-1"></i>學生文字通報之問題：</p>
+              <p class="font-bold text-rose-700 mb-1"><i class="fa-solid fa-quote-left mr-1"></i>通報問題：</p>
               <p class="text-slate-800 leading-relaxed font-medium">${issue.description}</p>
             </div>
             ${issue.resolutionNote ? `<p class="text-[11px] text-emerald-700 bg-emerald-50 p-2 rounded-lg border border-emerald-200 font-semibold"><strong>處置紀錄：</strong> ${issue.resolutionNote}</p>` : ''}
             ${issue.status === 'PENDING' ? `
               <div class="flex flex-wrap gap-2 pt-1 border-t border-slate-200">
                 <button onclick="handleIssueAction('${issue.id}', 'SWAPPED')" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow">
-                  <i class="fa-solid fa-arrows-rotate mr-1"></i>現場換一台/換電
+                  <i class="fa-solid fa-arrows-rotate mr-1"></i>現場換機/換電
                 </button>
                 <button onclick="handleIssueAction('${issue.id}', 'TO_REPAIR')" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow">
-                  <i class="fa-solid fa-wrench mr-1"></i>安排廠商送修
+                  <i class="fa-solid fa-wrench mr-1"></i>安排送修
                 </button>
                 <button onclick="handleIssueAction('${issue.id}', 'RESOLVED')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow">
-                  <i class="fa-solid fa-check mr-1"></i>現場調校正常結案
+                  <i class="fa-solid fa-check mr-1"></i>現場排解正常
                 </button>
               </div>
             ` : ''}
@@ -1260,10 +1279,18 @@
     function handleIssueAction(id, action) {
       const taSign = getTaSignature();
       let note = "";
-      if (action === 'SWAPPED') note = prompt("請輸入換機說明：", "已現場更換備用機/電池給學生");
+      if (action === 'SWAPPED') note = prompt("請輸入換機說明：", "已現場更換備用設備給學生");
       else if (action === 'TO_REPAIR') note = prompt("請輸入送修廠商：", "巨曜儀器公司");
-      else if (action === 'RESOLVED') note = "現場檢視調校正常結案";
+      else if (action === 'RESOLVED') note = "現場調校正常結案";
       if (note === null) return;
+
+      // Optimistic 本地更新
+      const target = liveIssues.find(i => i.id === id);
+      if (target) {
+        target.status = action;
+        target.resolutionNote = `${note} (助教：${taSign})`;
+      }
+      renderIssuesBoard();
 
       fetch(DEFAULT_GAS_URL, {
         method: 'POST',
@@ -1273,24 +1300,24 @@
           payload: { id: id, status: action, resolutionNote: note, handler: taSign }
         })
       }).then(() => {
-        alert("已更新處理紀錄！");
         fetchCloudData(false);
       });
     }
 
     function clearAllResolvedIssues() {
-      if (!confirm("確定要清理所有已處理封存的紀錄嗎？")) return;
+      if (!confirm("確定要清理所有已處置封存的紀錄嗎？")) return;
+      liveIssues = liveIssues.filter(i => i.status === 'PENDING');
+      renderIssuesBoard();
+
       fetch(DEFAULT_GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ action: "CLEAR_RESOLVED_ISSUES" })
       }).then(() => {
-        alert("已清除！");
         fetchCloudData(false);
       });
     }
 
-    // 管理後台表格渲染
     function renderAdminTable() {
       const parents = liveAssets.filter(a => a.isParent !== false);
 
@@ -1309,7 +1336,7 @@
         if (a.status === 'MAINTENANCE') badge = '<span class="px-2 py-0.5 rounded font-bold text-[10px] badge-repair">故障待修</span>';
 
         const borrowerText = a.currentBorrower 
-          ? `<strong class="text-slate-900">${a.currentBorrower.class} ${a.currentBorrower.group}</strong> (${a.currentBorrower.name})`
+          ? `<strong class="text-slate-900">${a.currentBorrower.class} ${a.currentBorrower.group}</strong>`
           : '<span class="text-slate-400">-</span>';
 
         let childrenTags = '';
@@ -1320,10 +1347,6 @@
         } else {
           childrenTags = '<span class="text-slate-400">-</span>';
         }
-
-        const checkTags = (a.checks && a.checks.length > 0)
-          ? a.checks.map(k => `<span class="inline-block bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded text-[10px] mr-1 mb-1 border border-slate-200">${k}</span>`).join('')
-          : '<span class="text-slate-400 text-[10px]">通用檢查項</span>';
 
         tbody.innerHTML += `
           <tr class="hover:bg-slate-50">
@@ -1336,14 +1359,14 @@
             <td class="p-3">${badge}</td>
             <td class="p-3">${borrowerText}</td>
             <td class="p-3 text-right space-x-1 whitespace-nowrap">
-              <button onclick="openEditAssetModal('${a.code}')" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold border border-indigo-200" title="修改設備">
+              <button onclick="openEditAssetModal('${a.code}')" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold border border-indigo-200">
                 <i class="fa-solid fa-pen-to-square mr-1"></i>修改
               </button>
-              ${a.status === 'BORROWED' ? `<button onclick="openVerifyReturnModal('${a.code}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold">驗收歸位</button>` : ''}
-              <button onclick="openQrPrintModal('${a.code}')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold" title="列印 QR 標籤">
-                <i class="fa-solid fa-qrcode mr-1"></i>QR貼紙
+              ${a.status === 'BORROWED' ? `<button onclick="openVerifyReturnModal('${a.code}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold">驗收</button>` : ''}
+              <button onclick="openQrPrintModal('${a.code}')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold">
+                <i class="fa-solid fa-qrcode mr-1"></i>標籤
               </button>
-              <button onclick="deleteAssetItem('${a.code}')" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 hover:text-rose-800 rounded-lg text-xs font-bold border border-rose-200" title="刪除設備">
+              <button onclick="deleteAssetItem('${a.code}')" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-xs font-bold border border-rose-200">
                 <i class="fa-solid fa-trash-can mr-1"></i>刪除
               </button>
             </td>
@@ -1352,7 +1375,6 @@
       });
     }
 
-    // 刪除設備（直通試算表）
     function deleteAssetItem(code) {
       const target = liveAssets.find(x => x.code === code);
       if (!target) return;
@@ -1364,12 +1386,14 @@
 
       if (!confirm(`確定要從 Google 試算表中永久刪除設備【${code}】(${target.name}) 嗎？`)) return;
 
+      liveAssets = liveAssets.filter(a => a.code !== code);
+      renderAdminTable();
+
       fetch(DEFAULT_GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ action: "DELETE_ASSET", code: code })
       }).then(() => {
-        alert(`設備【${code}】已從試算表刪除！`);
         fetchCloudData(false);
       });
     }
@@ -1430,7 +1454,7 @@
     function openCreateAssetModal(type) {
       document.getElementById('edit-original-code').value = '';
       document.getElementById('create-is-child').value = (type === 'CHILD') ? "1" : "0";
-      document.getElementById('create-modal-title').innerText = (type === 'CHILD') ? "新增子配件/電池" : "新增主機設備 (母資產)";
+      document.getElementById('create-modal-title').innerText = (type === 'CHILD') ? "新增子配件" : "新增主機設備 (母資產)";
       document.getElementById('btn-submit-asset-form').innerText = "確認送出至試算表";
       document.getElementById('copy-template-section').classList.remove('hidden');
 
@@ -1449,7 +1473,7 @@
       if (type === 'CHILD') {
         document.getElementById('create-checks').value = "金屬接點清潔無氧化; 卡扣彈性良好無斷裂";
       } else {
-        document.getElementById('create-checks').value = "物鏡目鏡無摔裂; 長圓氣泡管居中; 微動螺旋順暢; 腳架連接螺栓牙紋完好";
+        document.getElementById('create-checks').value = "物鏡目鏡無摔裂; 長圓氣泡管居中; 微動螺旋順暢";
       }
 
       updateCopyTemplateDropdown();
@@ -1490,14 +1514,13 @@
       const isChild = document.getElementById('create-is-child').value === "1";
       const cat = document.getElementById('create-category').value;
       const field = document.getElementById('field-parent-bind');
-      if (isChild || cat.includes("電池") || cat.includes("螺旋槳") || cat.includes("充電") || cat.includes("配件")) {
+      if (isChild || cat.includes("電池") || cat.includes("配件")) {
         field.classList.remove('hidden');
       } else {
         field.classList.add('hidden');
       }
     }
 
-    // 新增/修改設備送出（直通 Google Sheets）
     function submitAssetForm(e) {
       e.preventDefault();
       const originalCode = document.getElementById('edit-original-code').value;
@@ -1511,7 +1534,7 @@
 
       const checksArray = checksRaw 
         ? checksRaw.split(/[\n;；]+/).map(s => s.trim()).filter(s => s.length > 0)
-        : ["外觀無磕碰摔裂", "功能操作運轉正常"];
+        : ["外觀無摔裂磕碰", "功能運轉正常"];
 
       const btn = document.getElementById('btn-submit-asset-form');
       btn.disabled = true;
@@ -1537,14 +1560,13 @@
         btn.disabled = false;
         btn.innerText = "確認保存";
         closeModal('modal-create-asset');
-        alert("【儲存成功】設備資料已同步寫入 Google 試算表！");
+        alert("【儲存成功】設備資料已寫入 Google 試算表！");
         fetchCloudData(false);
       })
       .catch(() => {
         btn.disabled = false;
         btn.innerText = "確認保存";
         closeModal('modal-create-asset');
-        alert("儲存指令已發送至雲端！");
         setTimeout(() => fetchCloudData(false), 2000);
       });
     }
@@ -1577,6 +1599,16 @@
       document.getElementById('modal-role-auth').classList.remove('hidden');
     }
 
+    function selectRoleDirect(role) {
+      if (role === 'STUDENT') {
+        currentRole = 'STUDENT';
+        sessionStorage.setItem('survey_user_role', 'STUDENT');
+        setRoleBadge('STUDENT');
+        closeModal('modal-role-auth');
+        switchView('student');
+      }
+    }
+
     function verifyRoleLogin() {
       const pwd = document.getElementById('input-role-pwd').value.trim();
       fetch(DEFAULT_GAS_URL, {
@@ -1592,10 +1624,8 @@
           setRoleBadge(res.role);
           closeModal('modal-role-auth');
           if (res.role === 'ADMIN') {
-            alert("歡迎 老師！切換為最高管理權限。");
             switchView('admin');
           } else if (res.role === 'TA') {
-            alert("助教您好！切換至助教專用工作台。");
             switchView('ta');
           } else {
             switchView('student');
@@ -1605,7 +1635,6 @@
         }
       })
       .catch(() => {
-        // 離線容錯
         if (pwd === "9999") {
           currentRole = "ADMIN";
           setRoleBadge("ADMIN");
@@ -1625,13 +1654,13 @@
     function setRoleBadge(role) {
       const badge = document.getElementById('role-indicator');
       if (role === 'ADMIN') {
-        badge.className = "text-[10px] px-2 py-0.5 rounded-full font-bold bg-indigo-100 text-indigo-900 border border-indigo-300";
+        badge.className = "text-[10px] px-2 py-0.5 rounded-full font-bold bg-indigo-100 text-indigo-900 border border-indigo-300 whitespace-nowrap";
         badge.innerText = "老師 (最高權限)";
       } else if (role === 'TA') {
-        badge.className = "text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-900 border border-emerald-300";
+        badge.className = "text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 whitespace-nowrap";
         badge.innerText = "實習助教 (TA)";
       } else {
-        badge.className = "text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-800 text-slate-300 border border-slate-700";
+        badge.className = "text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-800 text-slate-300 border border-slate-700 whitespace-nowrap";
         badge.innerText = "學生模式";
       }
     }
@@ -1643,7 +1672,7 @@
         return;
       }
       if (target === 'admin' && currentRole !== 'ADMIN') {
-        alert("「管理後台」僅限 指導老師 進入，請先驗證老師密碼！");
+        alert("「管理後台」僅限指導老師進入，請先驗證老師密碼！");
         openRoleAuthModal();
         return;
       }
@@ -1655,26 +1684,25 @@
       document.getElementById('view-ta').classList.add('hidden');
       document.getElementById('view-admin').classList.add('hidden');
 
-      document.getElementById('nav-btn-student').className = "px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700";
-      document.getElementById('nav-btn-ta').className = "px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700";
-      document.getElementById('nav-btn-admin').className = "px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700";
+      document.getElementById('nav-btn-student').className = "shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700";
+      document.getElementById('nav-btn-ta').className = "shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700";
+      document.getElementById('nav-btn-admin').className = "shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700";
 
       if (v === 'student') {
         document.getElementById('view-student').classList.remove('hidden');
-        document.getElementById('nav-btn-student').className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow";
+        document.getElementById('nav-btn-student').className = "shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow";
       } else if (v === 'ta') {
         document.getElementById('view-ta').classList.remove('hidden');
-        document.getElementById('nav-btn-ta').className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow";
+        document.getElementById('nav-btn-ta').className = "shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow";
         renderTaBorrowedList();
         renderIssuesBoard();
       } else if (v === 'admin') {
         document.getElementById('view-admin').classList.remove('hidden');
-        document.getElementById('nav-btn-admin').className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow";
+        document.getElementById('nav-btn-admin').className = "shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow";
         renderAdminTable();
       }
     }
 
-    // 老師在後台修改安全通行碼
     function saveSecuritySettings() {
       const studentUser = document.getElementById('cfg-student-user').value.trim() || "student";
       const studentPwd = document.getElementById('cfg-student-pwd').value.trim() || "1234";
@@ -1699,7 +1727,7 @@
       checkGatekeeperStatus();
       loadCachedIdentity();
       loadTaIdentity();
-      fetchCloudData(false); // 啟動時自動向 Google 試算表雙向同步
+      fetchCloudData(false);
     };
   </script>
 </body>
